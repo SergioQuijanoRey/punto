@@ -1,35 +1,51 @@
-struct CommandArgumentParsing{
-    command: String,
-    action: Box<dyn Fn() -> ()>,
-}
+use std::collections::HashMap;
 
+type CallBack = fn() -> ();
 
 /// Reads the shell yaml config file and executes commands
-fn shell_command(){
+fn shell_command() {
     println!("Running shell commands");
 }
 
-fn install_command(){
+fn install_command() {
     println!("Installing packages")
 }
-fn main() {
+
+fn not_found_command(command: String) {
+    println!("Command {} is not valid", command);
+    show_help();
+}
+
+fn show_help(){
+    println!("Punto usage:");
+    println!("\tpunto --install: install all packages, defined in install.yml");
+    println!("\tpunto --shell: run custom shell scripts, defined in shell.yml");
+    println!("\tpunto --all: run all of above commands");
+}
+
+fn parse_args(){
+    // Arguments and their callbacks
+    // TODO -- convert this into a struct with methods for easier use
+    let mut arg_parser: HashMap<String, Box<CallBack> > = HashMap::new();
+    arg_parser.insert("--install".to_string(), Box::new(install_command));
+    arg_parser.insert("--shell".to_string(), Box::new(shell_command));
+
+    // Iterate over given arguments
     let args = std::env::args();
-    let mut arg_parser = vec![];
-    arg_parser.push(CommandArgumentParsing{
-        command: "--shell".to_string(),
-        action: Box::new(shell_command),
-    });
-
-    arg_parser.push(CommandArgumentParsing{
-        command: "--install".to_string(),
-        action: Box::new(install_command),
-    });
-
-    for arg in args{
-        for current_arg_parser in &arg_parser{
-            if arg == current_arg_parser.command{
-               (&current_arg_parser.action)();
-            }
+    for (indx, arg) in args.enumerate() {
+        // First arg is the cli app name
+        if indx == 0{
+            continue;
         }
+
+        let command = arg_parser.get(&arg);
+        match command{
+            Some(command) => (command)(),
+            None => not_found_command(arg),
+        };
     }
+}
+
+fn main() {
+    parse_args();
 }
