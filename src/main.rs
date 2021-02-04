@@ -1,10 +1,27 @@
+use std::process::Command;
 use std::collections::HashMap;
+
 
 type CallBack = fn() -> ();
 
+
+/// Runs a given shell command
+fn run_shell_command(command: &str){
+    let output = Command::new("sh")
+        .arg("-c")
+        .arg(command)
+        .output()
+        .expect(&("Failed to run command".to_owned() + command));
+
+    let output = String::from_utf8(output.stdout).unwrap_or("Command not runned well".to_string());
+    println!("{}", output);
+}
+
 /// Reads the shell yaml config file and executes commands
 fn shell_command() {
-    println!("Running shell commands");
+    println!("Running shell commands defined in shell.yaml");
+    println!("================================================================================");
+    run_shell_command("ls /home/sergio");
 }
 
 fn install_command() {
