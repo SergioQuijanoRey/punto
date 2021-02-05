@@ -86,7 +86,7 @@ fn parse_yaml_command(file_path: &str) -> Vec<CommandOptions> {
         commands.push(CommandOptions{
             description: value["description"].as_str().unwrap_or("No description provided").to_string(),
             quiet: value["quiet"].as_bool().unwrap_or(false),
-            command: value["command"].as_str().unwrap().to_string(),
+            command: value["command"].as_str().unwrap().to_string(), // Only mandatory field for command
             sudo: value["sudo"].as_bool().unwrap_or(false),
         });
     }
