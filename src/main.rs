@@ -2,7 +2,7 @@ use std::process::Command;
 use std::env;
 use std::fs;
 use std::collections::HashMap;
-use yaml_rust::{YamlLoader, YamlEmitter};
+use yaml_rust::YamlLoader;
 
 
 type CallBack = fn() -> ();
@@ -28,7 +28,7 @@ fn run_shell_command(command: &str){
 fn shell_command() {
     println!("Running shell commands defined in shell.yaml");
     println!("================================================================================");
-    parse_yaml("/home/sergio/GitProjects/punto/shell.yaml");
+    parse_yaml_command("/home/sergio/GitProjects/punto/shell.yaml");
     //run_shell_command("git log --oneline --color");
 }
 
@@ -56,15 +56,17 @@ struct CommandOptions{
     sudo: bool,
 }
 
-/// Given a yaml file path, it returns the CommandOptions vector which are used to launch a command
-fn parse_yaml(file_path: &str) -> Vec<CommandOptions> {
-    println!("We are parsing {}", file_path);
-    println!("But we are doing nothing by the moment");
-
+fn parse_yaml(file_path: &str) -> yaml_rust::Yaml {
     // Opening yaml file and parsing it
     let contents = fs::read_to_string(file_path).unwrap();
     let parsed_contents = YamlLoader::load_from_str(&contents).unwrap();
-    let parsed_contents = &parsed_contents[0];
+    let parsed_contents = parsed_contents[0].clone();
+    return parsed_contents;
+}
+
+/// Given a yaml file path, it returns the CommandOptions vector which are used to launch a command
+fn parse_yaml_command(file_path: &str) -> Vec<CommandOptions> {
+    let parsed_contents = parse_yaml(file_path);
 
     // Getting the commands from the yaml file into struct
     let mut commands = vec![];
@@ -77,7 +79,6 @@ fn parse_yaml(file_path: &str) -> Vec<CommandOptions> {
         });
     }
 
-    println!("Vector of commands is {:?}", commands);
     return commands;
 }
 
