@@ -10,7 +10,7 @@ type CallBack = fn() -> ();
 
 /// Runs a given shell command
 /// TODO -- We are loosing the colors of the output
-fn run_shell_command(command: &str){
+fn run_shell_command(command: &str) -> String{
     let user_env_vars : HashMap<String, String> = env::vars().collect();
     let output = Command::new("bash")
         .env_clear()
@@ -21,15 +21,27 @@ fn run_shell_command(command: &str){
         .expect(&("Failed to run command".to_owned() + command));
 
     let output = String::from_utf8(output.stdout).unwrap_or("Command not runned well".to_string());
-    println!("{}", output);
+    return output;
 }
 
 /// Reads the shell yaml config file and executes commands
 fn shell_command() {
     println!("Running shell commands defined in shell.yaml");
     println!("================================================================================");
-    parse_yaml_command("/home/sergio/GitProjects/punto/shell.yaml");
-    //run_shell_command("git log --oneline --color");
+    let commands = parse_yaml_command("/home/sergio/GitProjects/punto/shell.yaml");
+    for command in commands{
+        launch_command(command);
+    }
+}
+
+fn launch_command(command: CommandOptions){
+    println!("Launching command {}", command.description);
+    println!("================================================================================");
+
+    let output = run_shell_command(&command.command);
+    if command.quiet == false{
+        println!("{}", output);
+    }
 }
 
 fn install_command() {
@@ -72,10 +84,10 @@ fn parse_yaml_command(file_path: &str) -> Vec<CommandOptions> {
     let mut commands = vec![];
     for (_, value) in parsed_contents.as_hash().unwrap().iter(){
         commands.push(CommandOptions{
-            description: value["description"].as_str().unwrap().to_string(),
-            quiet: value["quiet"].as_bool().unwrap(),
+            description: value["description"].as_str().unwrap_or("No description provided").to_string(),
+            quiet: value["quiet"].as_bool().unwrap_or(false),
             command: value["command"].as_str().unwrap().to_string(),
-            sudo: value["sudo"].as_bool().unwrap(),
+            sudo: value["sudo"].as_bool().unwrap_or(false),
         });
     }
 
