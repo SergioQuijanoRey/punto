@@ -1,7 +1,8 @@
 use std::process::Command;
 use std::env;
+use std::fs;
 use std::collections::HashMap;
-use std::collections::BTreeMap;
+use yaml_rust::{YamlLoader, YamlEmitter};
 
 
 type CallBack = fn() -> ();
@@ -27,8 +28,8 @@ fn run_shell_command(command: &str){
 fn shell_command() {
     println!("Running shell commands defined in shell.yaml");
     println!("================================================================================");
-    parse_yaml("./shell.yaml");
-    run_shell_command("git log --oneline --color");
+    parse_yaml("/home/sergio/GitProjects/punto/shell.yaml");
+    //run_shell_command("git log --oneline --color");
 }
 
 fn install_command() {
@@ -47,14 +48,53 @@ fn show_help(){
     println!("\tpunto --all: run all of above commands");
 }
 
-fn parse_yaml(file_path: &str){
+#[derive(Debug)]
+struct CommandOptions{
+    description: String,
+    quiet: bool,
+    command: String,
+    sudo: bool,
+}
+
+/// Given a yaml file path, it returns the CommandOptions vector which are used to launch a command
+fn parse_yaml(file_path: &str) -> Vec<CommandOptions> {
     println!("We are parsing {}", file_path);
     println!("But we are doing nothing by the moment");
 
-    // Deserialize it back to a Rust type.
-    let deserialized_map_result : String = serde_yaml::from_str(&file_path).unwrap_or("".to_string());
-    println!("Yaml file contains:\n{}", deserialized_map_result);
+    // Opening yaml file and parsing it
+    let contents = fs::read_to_string(file_path).unwrap();
+    let parsed_contents = YamlLoader::load_from_str(&contents).unwrap();
+    let parsed_contents = &parsed_contents[0];
+    println!("{:?}", parsed_contents);
+    println!("====");
 
+
+    let mut commands = vec![];
+    // TODO -- now it is hardcoded we we are close to automatically generate the vector
+    //for (key, value) in parsed_contents.as_hash().unwrap().iter(){
+    //    commands.push(CommandOptions{
+    //        description: parsed_contents[key]["description"].as_str().unwrap().to_string(),
+    //        quiet: parsed_contents[key]["quiet"].as_bool().unwrap(),
+    //        command: parsed_contents[key]["command"].as_str().unwrap().to_string(),
+    //        sudo: parsed_contents[key]["sudo"].as_bool().unwrap(),
+    //    });
+    //}
+
+    commands.push(CommandOptions{
+        description: parsed_contents["pruebas"]["description"].as_str().unwrap().to_string(),
+        quiet: parsed_contents["pruebas"]["quiet"].as_bool().unwrap(),
+        command: parsed_contents["pruebas"]["command"].as_str().unwrap().to_string(),
+        sudo: parsed_contents["pruebas"]["sudo"].as_bool().unwrap(),
+    });
+    commands.push(CommandOptions{
+        description: parsed_contents["otras_pruebas"]["description"].as_str().unwrap().to_string(),
+        quiet: parsed_contents["otras_pruebas"]["quiet"].as_bool().unwrap(),
+        command: parsed_contents["otras_pruebas"]["command"].as_str().unwrap().to_string(),
+        sudo: parsed_contents["otras_pruebas"]["sudo"].as_bool().unwrap(),
+    });
+
+    println!("Vector of commands is {:?}", commands);
+    return commands;
 }
 
 fn parse_args(){

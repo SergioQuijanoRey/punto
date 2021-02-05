@@ -5,6 +5,4 @@ authors = ["Sergio Quijano Rey <sergiquijano@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-serde = "1.0"
-serde_yaml = "0.8"
-
+yaml-rust = "0.4.5"
