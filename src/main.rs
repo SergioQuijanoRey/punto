@@ -1,13 +1,19 @@
 use std::process::Command;
+use std::env;
 use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 
 type CallBack = fn() -> ();
 
 
 /// Runs a given shell command
+/// TODO -- We are loosing the colors of the output
 fn run_shell_command(command: &str){
-    let output = Command::new("sh")
+    let user_env_vars : HashMap<String, String> = env::vars().collect();
+    let output = Command::new("bash")
+        .env_clear()
+        .envs(user_env_vars)
         .arg("-c")
         .arg(command)
         .output()
@@ -21,7 +27,8 @@ fn run_shell_command(command: &str){
 fn shell_command() {
     println!("Running shell commands defined in shell.yaml");
     println!("================================================================================");
-    run_shell_command("ls /home/sergio");
+    parse_yaml("./shell.yaml");
+    run_shell_command("git log --oneline --color");
 }
 
 fn install_command() {
@@ -38,6 +45,16 @@ fn show_help(){
     println!("\tpunto --install: install all packages, defined in install.yml");
     println!("\tpunto --shell: run custom shell scripts, defined in shell.yml");
     println!("\tpunto --all: run all of above commands");
+}
+
+fn parse_yaml(file_path: &str){
+    println!("We are parsing {}", file_path);
+    println!("But we are doing nothing by the moment");
+
+    // Deserialize it back to a Rust type.
+    let deserialized_map_result : String = serde_yaml::from_str(&file_path).unwrap_or("".to_string());
+    println!("Yaml file contains:\n{}", deserialized_map_result);
+
 }
 
 fn parse_args(){
