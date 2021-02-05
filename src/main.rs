@@ -65,33 +65,17 @@ fn parse_yaml(file_path: &str) -> Vec<CommandOptions> {
     let contents = fs::read_to_string(file_path).unwrap();
     let parsed_contents = YamlLoader::load_from_str(&contents).unwrap();
     let parsed_contents = &parsed_contents[0];
-    println!("{:?}", parsed_contents);
-    println!("====");
 
-
+    // Getting the commands from the yaml file into struct
     let mut commands = vec![];
-    // TODO -- now it is hardcoded we we are close to automatically generate the vector
-    //for (key, value) in parsed_contents.as_hash().unwrap().iter(){
-    //    commands.push(CommandOptions{
-    //        description: parsed_contents[key]["description"].as_str().unwrap().to_string(),
-    //        quiet: parsed_contents[key]["quiet"].as_bool().unwrap(),
-    //        command: parsed_contents[key]["command"].as_str().unwrap().to_string(),
-    //        sudo: parsed_contents[key]["sudo"].as_bool().unwrap(),
-    //    });
-    //}
-
-    commands.push(CommandOptions{
-        description: parsed_contents["pruebas"]["description"].as_str().unwrap().to_string(),
-        quiet: parsed_contents["pruebas"]["quiet"].as_bool().unwrap(),
-        command: parsed_contents["pruebas"]["command"].as_str().unwrap().to_string(),
-        sudo: parsed_contents["pruebas"]["sudo"].as_bool().unwrap(),
-    });
-    commands.push(CommandOptions{
-        description: parsed_contents["otras_pruebas"]["description"].as_str().unwrap().to_string(),
-        quiet: parsed_contents["otras_pruebas"]["quiet"].as_bool().unwrap(),
-        command: parsed_contents["otras_pruebas"]["command"].as_str().unwrap().to_string(),
-        sudo: parsed_contents["otras_pruebas"]["sudo"].as_bool().unwrap(),
-    });
+    for (_, value) in parsed_contents.as_hash().unwrap().iter(){
+        commands.push(CommandOptions{
+            description: value["description"].as_str().unwrap().to_string(),
+            quiet: value["quiet"].as_bool().unwrap(),
+            command: value["command"].as_str().unwrap().to_string(),
+            sudo: value["sudo"].as_bool().unwrap(),
+        });
+    }
 
     println!("Vector of commands is {:?}", commands);
     return commands;
