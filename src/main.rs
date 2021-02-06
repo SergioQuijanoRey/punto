@@ -1,6 +1,5 @@
-use std::collections::HashMap;
-
 mod CommandProcessor;
+mod ArgParser;
 
 type CallBack = fn() -> ();
 
@@ -21,29 +20,6 @@ fn show_help(){
 }
 
 
-fn parse_args(){
-    // Arguments and their callbacks
-    // TODO -- convert this into a struct with methods for easier use
-    let mut arg_parser: HashMap<String, Box<CallBack> > = HashMap::new();
-    arg_parser.insert("--install".to_string(), Box::new(install_command));
-    arg_parser.insert("--shell".to_string(), Box::new(CommandProcessor::shell_command));
-
-    // Iterate over given arguments
-    let args = std::env::args();
-    for (indx, arg) in args.enumerate() {
-        // First arg is the cli app name
-        if indx == 0{
-            continue;
-        }
-
-        let command = arg_parser.get(&arg);
-        match command{
-            Some(command) => (command)(),
-            None => not_found_command(arg),
-        };
-    }
-}
-
 fn main() {
-    parse_args();
+    ArgParser::parse_args();
 }
