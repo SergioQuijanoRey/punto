@@ -18,3 +18,49 @@
     * With different package managers in mind
 * Execute custom shell scripts
 * Test that your dotfiles can be installed inside an isolated container
+
+## Examples
+
+### `shell.yaml`
+
+~~~yaml
+list_dir:
+    description: List this project using exa
+    quiet: false
+    commands:
+        - exa -T /home/sergio/GitProjects/punto/src/
+    sudo: false
+
+cat some file:
+    description: Cat some file
+    commands:
+        - cat /home/sergio/.bashrc
+
+bat some file:
+    description: Cat with bat
+    commands:
+        - bat /home/sergio/.bashrc
+
+htop which is interactive:
+    commands:
+        - htop
+
+Git with colors:
+    commands:
+        - git log --oneline
+
+More than one command:
+    description: This is other proof of concept
+    quiet: true
+    commands:
+        - echo "This is a command"
+        - echo "This is other command"
+        - echo "More commands yay"
+    sudo: true
+install other:
+    description: This is other proof of concept
+    quiet: true
+    commands:
+        - paru -S spotify
+    sudo: true
+~~~
