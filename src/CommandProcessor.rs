@@ -1,15 +1,15 @@
 use crate::YamlProcessor;
 use std::collections::HashMap;
 use std::env;
-use std::io::{self, Write};
 use std::process::{Command, Stdio};
 
 // TODO -- struct fields have to be private and methods need to be implemented
+// TODO -- change command to commands: Vec<String>
 #[derive(Debug)]
-pub struct CommandOptions {
+pub struct CommandBlock {
     pub description: String,
     pub quiet: bool,
-    pub command: String,
+    pub commands: Vec<String>,
     pub sudo: bool,
 }
 
@@ -41,9 +41,11 @@ pub fn shell_command() {
     }
 }
 
-fn launch_command(command: CommandOptions) {
-    println!("Launching command {}", command.description);
+fn launch_command(command_block: CommandBlock) {
+    println!("Launching command {}", command_block.description);
     println!("================================================================================");
 
-    run_shell_command(&command.command);
+    for command in command_block.commands{
+        run_shell_command(&command);
+    }
 }
