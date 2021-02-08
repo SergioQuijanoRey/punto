@@ -23,6 +23,8 @@
 
 ### `shell.yaml`
 
+Run `punto --shell`
+
 ~~~yaml
 list_dir:
     description: List this project using exa
@@ -66,6 +68,8 @@ install other:
 ~~~
 
 ### `packages.yaml`
+
+Run `punto --install`
 
 ~~~yaml
 common:
