@@ -15,7 +15,8 @@ pub struct CommandBlock {
 
 /// Runs a given shell command in interactive mode
 /// TODO -- handle exceptions
-fn run_shell_command(command: &str){
+/// TODO -- this should not be public. launch_command should be the public command
+pub fn run_shell_command(command: &str){
     let user_env_vars: HashMap<String, String> = env::vars().collect();
     let mut command_handle = Command::new("bash")
         .env_clear()

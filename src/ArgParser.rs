@@ -1,11 +1,8 @@
 use std::collections::HashMap;
 use crate::CommandProcessor;
+use crate::Installer;
 
 type CallBack = fn() -> ();
-
-fn install_command() {
-    println!("Installing packages")
-}
 
 fn not_found_command(command: String) {
     println!("Command {} is not valid", command);
@@ -23,7 +20,7 @@ pub fn parse_args(){
     // Arguments and their callbacks
     // TODO -- convert this into a struct with methods for easier use
     let mut arg_parser: HashMap<String, Box<CallBack> > = HashMap::new();
-    arg_parser.insert("--install".to_string(), Box::new(install_command));
+    arg_parser.insert("--install".to_string(), Box::new(Installer::install_command));
     arg_parser.insert("--shell".to_string(), Box::new(CommandProcessor::shell_command));
 
     // Iterate over given arguments
