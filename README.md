@@ -64,3 +64,34 @@ install other:
         - paru -S spotify
     sudo: true
 ~~~
+
+### `packages.yaml`
+
+~~~yaml
+common:
+    install_command: sudo pacman -S --noconfirm
+    packages:
+        - git
+        - htop
+pacman:
+    install_command: sudo pacman -S --noconfirm
+    packages:
+        - yay
+        - sudo
+        - base-devel
+        - rsync
+        - cronie
+        - alacritty               # Preferred terminal
+        - screen                  # For launching apps in the background
+        - exa                     # Good replacement for ls and tree (exa -T)
+        - fd                      # Good replacement for find
+aur:
+    install_command: paru -S --noconfirm
+    packages:
+        - bat         # A better cat alternative
+        - bottom      # A better top alternative
+
+        # Others
+        #===============================================================================
+        - spotify
+~~~
