@@ -20,7 +20,7 @@ pub fn parse_args(){
     // Arguments and their callbacks
     // TODO -- convert this into a struct with methods for easier use
     let mut arg_parser: HashMap<String, Box<CallBack> > = HashMap::new();
-    arg_parser.insert("--install".to_string(), Box::new(Installer::install_command));
+    arg_parser.insert("--install".to_string(), Box::new(Installer::handle_install_command));
     arg_parser.insert("--shell".to_string(), Box::new(CommandProcessor::handle_shell_command));
 
     // Iterate over given arguments

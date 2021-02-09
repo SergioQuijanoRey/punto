@@ -3,13 +3,12 @@ use std::collections::HashMap;
 use std::env;
 use std::process::{Command, Stdio};
 
-// TODO -- struct fields have to be private and methods need to be implemented
 #[derive(Debug)]
 pub struct CommandBlock {
-    pub description: String,
-    pub quiet: bool,
-    pub commands: Vec<String>,
-    pub sudo: bool,
+    description: String,
+    quiet: bool,
+    commands: Vec<String>,
+    sudo: bool,
 }
 
 impl CommandBlock {

@@ -8,8 +8,8 @@ struct InstallerBlock {
     packages: Vec<String>,
 }
 
-// Callback for cli arg
-pub fn install_command() {
+/// Callback for --install cli arg
+pub fn handle_install_command() {
     println!("Installing packages");
     let installer_blocks = parse_yaml_installer("./packages.yaml");
 
@@ -36,7 +36,7 @@ fn install_package(install_command: &str, package: &str) {
     command_block.execute();
 }
 
-// Given a installer yaml file, returns a vector with its InstallerBlocks
+/// Given a installer yaml file, returns a vector with its InstallerBlocks
 fn parse_yaml_installer(file_path: &str) -> Vec<InstallerBlock> {
     let parsed_contents = YamlProcessor::parse_yaml(file_path);
     let mut installer_blocks = vec![];
