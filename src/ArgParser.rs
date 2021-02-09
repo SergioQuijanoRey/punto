@@ -21,7 +21,7 @@ pub fn parse_args(){
     // TODO -- convert this into a struct with methods for easier use
     let mut arg_parser: HashMap<String, Box<CallBack> > = HashMap::new();
     arg_parser.insert("--install".to_string(), Box::new(Installer::install_command));
-    arg_parser.insert("--shell".to_string(), Box::new(CommandProcessor::shell_command));
+    arg_parser.insert("--shell".to_string(), Box::new(CommandProcessor::handle_shell_command));
 
     // Iterate over given arguments
     let args = std::env::args();
