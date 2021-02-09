@@ -1,15 +1,13 @@
-use std::collections::HashMap;
 use crate::CommandProcessor;
 use crate::Installer;
-
-type CallBack = fn() -> ();
+use std::collections::HashMap;
 
 fn not_found_command(command: String) {
     println!("Command {} is not valid", command);
     show_help();
 }
 
-fn show_help(){
+fn show_help() {
     println!("Punto usage:");
     println!("\tpunto --install: install all packages, defined in install.yml");
     println!("\tpunto --shell: run custom shell scripts, defined in shell.yml");
@@ -17,27 +15,83 @@ fn show_help(){
     println!("\tpunto --help: shows this help");
 }
 
-pub fn parse_args(){
-    // Arguments and their callbacks
-    // TODO -- convert this into a struct with methods for easier use
-    let mut arg_parser: HashMap<String, Box<CallBack> > = HashMap::new();
-    arg_parser.insert("--install".to_string(), Box::new(Installer::handle_install_command));
-    arg_parser.insert("--shell".to_string(), Box::new(CommandProcessor::handle_shell_command));
-    arg_parser.insert("--help".to_string(), Box::new(show_help));
+type CallBack = fn() -> ();
+pub struct Handler {
+    arg_input: String,
+    handler: Box<CallBack>,
+}
 
+impl Handler {
+    pub fn new(arg_input: String, handler: CallBack) -> Self {
+        return Handler {
+            arg_input,
+            handler: Box::new(handler),
+        };
+    }
+
+    /// Runs the callback for the Handler
+    pub fn launch_callback(&self) {
+        (self.handler)();
+    }
+}
+
+pub struct ArgParser {
+    handlers: Vec<Handler>,
+}
+
+impl ArgParser {
+    pub fn new() -> Self {
+        return ArgParser { handlers: vec![] };
+    }
+
+    pub fn add_handler(&mut self, handler: Handler) {
+        self.handlers.push(handler);
+    }
+
+    /// Finds a handler by its arg_input
+    pub fn find_handler(&self, arg_input: String) -> Option<&Handler> {
+        for handler in &self.handlers {
+            if handler.arg_input == arg_input {
+                return Some(handler);
+            }
+        }
+
+        return None;
+    }
+}
+
+/// Gets my arg parser, defined by hand
+pub fn parse_args() -> ArgParser {
+    // Arguments and their callbacks
+
+    let mut arg_parser = ArgParser::new();
+    arg_parser.add_handler(Handler::new(
+        "--install".to_string(),
+        Installer::handle_install_command,
+    ));
+    arg_parser.add_handler(Handler::new(
+        "--shell".to_string(),
+        CommandProcessor::handle_shell_command,
+    ));
+    arg_parser.add_handler(Handler::new("--help".to_string(), show_help));
+
+    return arg_parser;
+}
+
+/// Launchs the callbacks for given args by cli command
+pub fn launch_arg_handlers(arg_parser: ArgParser) {
     // Iterate over given arguments
     let args = std::env::args();
     for (indx, arg) in args.enumerate() {
         // First arg is the cli app name
-        if indx == 0{
+        if indx == 0 {
             continue;
         }
 
-        let command = arg_parser.get(&arg);
-        match command{
-            Some(command) => (command)(),
+        let command = arg_parser.find_handler(arg.clone());
+        match command {
+            Some(command) => command.launch_callback(),
             None => not_found_command(arg),
         };
     }
 }
-

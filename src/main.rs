@@ -4,5 +4,6 @@ mod YamlProcessor;
 mod Installer;
 
 fn main() {
-    ArgParser::parse_args();
+    let arg_parser = ArgParser::parse_args();
+    ArgParser::launch_arg_handlers(arg_parser);
 }
