@@ -8,6 +8,31 @@ struct InstallerBlock {
     packages: Vec<String>,
 }
 
+impl InstallerBlock {
+    /// Creates a new InstallerBlock struct
+    pub fn new(name: String, install_command: String, packages: Vec<String>) -> Self {
+        return InstallerBlock {
+            name,
+            install_command,
+            packages,
+        };
+    }
+
+    /// Installs all the packages described in the InstallerBlock
+    pub fn install_all_packages(&self) {
+        for package in &self.packages {
+            let command = format!("{} {}", self.install_command, package);
+            let command_block = CommandProcessor::CommandBlock::new(
+                format!("Install package {}", package),
+                false,
+                vec![command],
+                false,
+            );
+            command_block.execute();
+        }
+    }
+}
+
 /// Callback for --install cli arg
 pub fn handle_install_command() {
     println!("Installing packages");
@@ -18,22 +43,9 @@ pub fn handle_install_command() {
         println!(
             "================================================================================"
         );
+        block.install_all_packages();
 
-        for package in block.packages {
-            install_package(&block.install_command, &package);
-        }
     }
-}
-
-fn install_package(install_command: &str, package: &str) {
-    let command = format!("{} {}", install_command, package);
-    let command_block = CommandProcessor::CommandBlock::new(
-        format!("Install package {}", package),
-        false,
-        vec![command],
-        false,
-    );
-    command_block.execute();
 }
 
 /// Given a installer yaml file, returns a vector with its InstallerBlocks
