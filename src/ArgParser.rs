@@ -14,6 +14,7 @@ fn show_help(){
     println!("\tpunto --install: install all packages, defined in install.yml");
     println!("\tpunto --shell: run custom shell scripts, defined in shell.yml");
     println!("\tpunto --all: run all of above commands");
+    println!("\tpunto --help: shows this help");
 }
 
 pub fn parse_args(){
@@ -22,6 +23,7 @@ pub fn parse_args(){
     let mut arg_parser: HashMap<String, Box<CallBack> > = HashMap::new();
     arg_parser.insert("--install".to_string(), Box::new(Installer::handle_install_command));
     arg_parser.insert("--shell".to_string(), Box::new(CommandProcessor::handle_shell_command));
+    arg_parser.insert("--help".to_string(), Box::new(show_help));
 
     // Iterate over given arguments
     let args = std::env::args();
