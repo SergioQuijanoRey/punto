@@ -99,3 +99,24 @@ aur:
         #===============================================================================
         - spotify
 ~~~
+
+### `directories.yaml`
+
+Run `punto --download` or `punto --upload`
+
+~~~yaml
+# Where the dotfiles repo is located
+repo_base: /home/sergio/punto/
+
+directories:
+    - file_descr:
+        # Default sync type is file
+        # Therefore, this field does not need to be specified
+        sync_type: file
+        repo_path: ./src/main.rs
+        system_path: /home/sergio/pruebas.rs
+    - dir_descr:
+        sync_type: dir
+        repo_path: ./src/
+        system_path: /home/sergio/codigo_de_pruebas
+~~~
