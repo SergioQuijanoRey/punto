@@ -1,5 +1,6 @@
 use crate::CommandProcessor;
 use crate::Installer;
+use crate::Downloader;
 use std::collections::HashMap;
 
 fn not_found_command(command: String) {
@@ -73,6 +74,7 @@ pub fn parse_args() -> ArgParser {
         "--shell".to_string(),
         CommandProcessor::handle_shell_command,
     ));
+    arg_parser.add_handler(Handler::new("--download".to_string(), Downloader::handle_download));
     arg_parser.add_handler(Handler::new("--help".to_string(), show_help));
 
     return arg_parser;
