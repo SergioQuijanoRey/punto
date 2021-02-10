@@ -1,7 +1,7 @@
 use crate::YamlProcessor;
 use std::collections::HashMap;
 use std::env;
-use std::process::{Command, Stdio};
+use std::process::{Command, Stdio, exit};
 
 #[derive(Debug)]
 pub struct CommandBlock {
@@ -68,6 +68,16 @@ pub fn handle_shell_command() {
 /// Given a yaml file path, it returns the CommandOptions vector which are used to launch a command
 fn parse_yaml_command(file_path: &str) -> Vec<CommandBlock> {
     let parsed_contents = YamlProcessor::parse_yaml(file_path);
+    // TODO -- this block of code is repeated
+    let parsed_contents = match parsed_contents{
+        Ok(contents) => contents,
+        Err(err) => {
+            eprintln!("Could not parse {}, exiting now", file_path);
+            eprintln!("Error code was {}", err);
+            exit(-1);
+        }
+    };
+
     let mut commands = vec![];
 
     // Getting the commands from the yaml file into struct

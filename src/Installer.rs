@@ -1,5 +1,6 @@
 use crate::CommandProcessor;
 use crate::YamlProcessor;
+use std::process::exit;
 
 #[derive(Debug)]
 struct InstallerBlock {
@@ -51,6 +52,16 @@ pub fn handle_install_command() {
 /// Given a installer yaml file, returns a vector with its InstallerBlocks
 fn parse_yaml_installer(file_path: &str) -> Vec<InstallerBlock> {
     let parsed_contents = YamlProcessor::parse_yaml(file_path);
+    // TODO -- this block of code is repeated
+    let parsed_contents = match parsed_contents{
+        Ok(contents) => contents,
+        Err(err) => {
+            eprintln!("Could not parse {}, exiting now", file_path);
+            eprintln!("Error code was {}", err);
+            exit(-1);
+        }
+    };
+
     let mut installer_blocks = vec![];
 
     for (key, value) in parsed_contents.as_hash().unwrap() {
