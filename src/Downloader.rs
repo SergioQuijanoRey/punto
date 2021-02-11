@@ -148,6 +148,7 @@ fn create_dir_if_not_exists(path: &str) {
 }
 
 /// Copies one dir to other recursively
+/// TODO -- BUG -- fails if dir already exists
 fn copy_dir_recursively(from: &str, to: &str) {
     let from = vec![from];
     let copy_options = fs_extra::dir::CopyOptions::new();
