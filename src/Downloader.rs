@@ -54,31 +54,11 @@ impl DirectoriesDescr {
                 }
 
                 DirFileType::Dir => {
-                    // Create dir if not exists
-                    if Path::exists(Path::new(&dir_block.system_path)) == false {
-                        println!("Dir {} does not exist, creating it...", &dir_block.system_path);
-                        match fs::create_dir_all(&dir_block.system_path) {
-                            Err(err) => {
-                                eprintln!("Could not create dir {}", &dir_block.system_path);
-                                eprintln!("Error code was {}", err);
-                                exit(-1);
-                            }
-                            Ok(_) => (),
-                        }
-                    }
+                    create_dir_if_not_exists(&dir_block.system_path);
 
-                    // Copy contents of the dir recursively
-                    let from = vec![&dir_block.repo_path];
+                    let from = &dir_block.repo_path;
                     let to = &dir_block.system_path;
-                    let copy_options = fs_extra::dir::CopyOptions::new();
-                    match fs_extra::copy_items(&from, to, &copy_options) {
-                        Err(err) => {
-                            eprintln!("Error copying file {} to file {}", from[0], to);
-                            eprintln!("Error code was {}", err);
-                            exit(-1);
-                        }
-                        Ok(_) => (),
-                    };
+                    copy_dir_recursively(from, to);
                 }
             }
         }
@@ -151,3 +131,33 @@ pub fn parse_yaml_directories(file_path: &str) -> DirectoriesDescr {
 
     return dir_descr;
 }
+
+/// Creates recursively a dir if does not exist
+fn create_dir_if_not_exists(path: &str) {
+    if Path::exists(Path::new(path)) == false {
+        println!("==> Dir {} does not exist, creating it...", path);
+        match fs::create_dir_all(path) {
+            Err(err) => {
+                eprintln!("Could not create dir {}", path);
+                eprintln!("Error code was {}", err);
+                exit(-1);
+            }
+            Ok(_) => (),
+        }
+    }
+}
+
+/// Copies one dir to other recursively
+fn copy_dir_recursively(from: &str, to: &str) {
+    let from = vec![from];
+    let copy_options = fs_extra::dir::CopyOptions::new();
+    match fs_extra::copy_items(&from, to, &copy_options) {
+        Err(err) => {
+            eprintln!("Error copying file {} to file {}", from[0], to);
+            eprintln!("Error code was {}", err);
+            exit(-1);
+        }
+        Ok(_) => (),
+    };
+}
+
