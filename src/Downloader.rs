@@ -1,10 +1,17 @@
 use crate::YamlProcessor;
 use std::process::exit;
+use std::fs;
 
 pub fn handle_download() {
     println!("==> Getting files from git repo to your system!");
-    parse_yaml_directories("/home/sergio/GitProjects/punto/directories.yaml");
+
+    // Get directives from yaml file
+    let dir_descr = parse_yaml_directories("/home/sergio/GitProjects/punto/directories.yaml");
+
+    // Download
+    dir_descr.dowload_from_repo_to_system();
 }
+
 
 #[derive(Debug)]
 pub enum DirFileType {
@@ -22,6 +29,30 @@ pub struct DirectoriesDescr {
 impl DirectoriesDescr {
     pub fn push(&mut self, dir_block: DirBlock) {
         self.dir_blocs.push(dir_block);
+    }
+
+    /// Downloads files from repo to the system
+    pub fn dowload_from_repo_to_system(&self){
+        for dir_block in &self.dir_blocs{
+            println!("Downloading {} to {} path", dir_block.repo_path, dir_block.system_path);
+            match &dir_block.sync_type{
+                DirFileType::File => {
+                    let from = &dir_block.repo_path;
+                    let to = &dir_block.system_path;
+                    match std::fs::copy(from, to){
+                        Err(err) => {
+                            eprintln!("Error copying file {} to file {}", from, to);
+                            eprintln!("Error code was {}", err);
+                        }
+                        Ok(_) => ()
+                    };
+                },
+
+                DirFileType::Dir => {
+                    println!("Syncing directorie")
+                }
+            }
+        }
     }
 }
 
