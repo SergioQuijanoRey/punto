@@ -61,6 +61,10 @@ impl ArgParser {
     }
 }
 
+fn show_version(){
+    println!("punto v0.0.1 -- Still in development");
+}
+
 /// Gets my arg parser, defined by hand
 pub fn parse_args() -> ArgParser {
     // Arguments and their callbacks
@@ -76,6 +80,8 @@ pub fn parse_args() -> ArgParser {
     ));
     arg_parser.add_handler(Handler::new("--download".to_string(), Downloader::handle_download));
     arg_parser.add_handler(Handler::new("--help".to_string(), show_help));
+    arg_parser.add_handler(Handler::new("--version".to_string(), show_version));
+    arg_parser.add_handler(Handler::new("-v".to_string(), show_version));
 
     return arg_parser;
 }
