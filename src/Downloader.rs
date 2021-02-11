@@ -1,6 +1,8 @@
 use crate::YamlProcessor;
-use std::process::exit;
+use fs_extra;
 use std::fs;
+use std::path::Path;
+use std::process::exit;
 
 pub fn handle_download() {
     println!("==> Getting files from git repo to your system!");
@@ -11,7 +13,6 @@ pub fn handle_download() {
     // Download
     dir_descr.dowload_from_repo_to_system();
 }
-
 
 #[derive(Debug)]
 pub enum DirFileType {
@@ -32,24 +33,52 @@ impl DirectoriesDescr {
     }
 
     /// Downloads files from repo to the system
-    pub fn dowload_from_repo_to_system(&self){
-        for dir_block in &self.dir_blocs{
-            println!("Downloading {} to {} path", dir_block.repo_path, dir_block.system_path);
-            match &dir_block.sync_type{
+    pub fn dowload_from_repo_to_system(&self) {
+        for dir_block in &self.dir_blocs {
+            println!(
+                "Downloading {} to {} path",
+                dir_block.repo_path, dir_block.system_path
+            );
+            match &dir_block.sync_type {
                 DirFileType::File => {
                     let from = &dir_block.repo_path;
                     let to = &dir_block.system_path;
-                    match std::fs::copy(from, to){
+                    match std::fs::copy(from, to) {
                         Err(err) => {
                             eprintln!("Error copying file {} to file {}", from, to);
                             eprintln!("Error code was {}", err);
+                            exit(-1);
                         }
-                        Ok(_) => ()
+                        Ok(_) => (),
                     };
-                },
+                }
 
                 DirFileType::Dir => {
-                    println!("Syncing directorie")
+                    // Create dir if not exists
+                    if Path::exists(Path::new(&dir_block.system_path)) == false {
+                        println!("Dir {} does not exist, creating it...", &dir_block.system_path);
+                        match fs::create_dir_all(&dir_block.system_path) {
+                            Err(err) => {
+                                eprintln!("Could not create dir {}", &dir_block.system_path);
+                                eprintln!("Error code was {}", err);
+                                exit(-1);
+                            }
+                            Ok(_) => (),
+                        }
+                    }
+
+                    // Copy contents of the dir recursively
+                    let from = vec![&dir_block.repo_path];
+                    let to = &dir_block.system_path;
+                    let copy_options = fs_extra::dir::CopyOptions::new();
+                    match fs_extra::copy_items(&from, to, &copy_options) {
+                        Err(err) => {
+                            eprintln!("Error copying file {} to file {}", from[0], to);
+                            eprintln!("Error code was {}", err);
+                            exit(-1);
+                        }
+                        Ok(_) => (),
+                    };
                 }
             }
         }
@@ -89,7 +118,10 @@ pub fn parse_yaml_directories(file_path: &str) -> DirectoriesDescr {
 
     // We get the repo_base section from the yaml file
     let mut dir_descr = DirectoriesDescr {
-        repo_base: parsed_contents["repo_base"].as_str().expect("repo_base: <path> is not specified well").to_string(),
+        repo_base: parsed_contents["repo_base"]
+            .as_str()
+            .expect("repo_base: <path> is not specified well")
+            .to_string(),
         dir_blocs: vec![],
     };
 
@@ -98,7 +130,6 @@ pub fn parse_yaml_directories(file_path: &str) -> DirectoriesDescr {
     for dir_block in dir_blocks {
         // We ignore the name of the block
         for (_, value) in dir_block.as_hash().unwrap() {
-
             // Default or error type is File
             let sync_type = value["sync_type"].as_str().unwrap();
             let sync_type = if sync_type == "dir" {
