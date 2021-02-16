@@ -179,7 +179,7 @@ fn copy_dir_recursively(from: &str, to: &str) {
 
     match fs_extra::copy_items(&from, to, &copy_options) {
         Err(err) => {
-            eprintln!("#Error copying file {} to file {}", from[0], to);
+            eprintln!("Error copying dir {} to dir {}", from[0], to);
             eprintln!("Error code was {}", err);
             exit(-1);
         }
