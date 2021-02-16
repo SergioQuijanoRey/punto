@@ -24,6 +24,8 @@ pub enum DirFileType {
 #[derive(Debug)]
 pub struct DirectoriesDescr {
     repo_base: String,
+
+    // TODO -- TYPO
     dir_blocs: Vec<DirBlock>,
 }
 
@@ -33,18 +35,22 @@ impl DirectoriesDescr {
     }
 
     /// Downloads files from repo to the system
-    /// TODO -- BUG -- Not considering repo_base
     pub fn dowload_from_repo_to_system(&self) {
         for dir_block in &self.dir_blocs {
             println!(
                 "==> Downloading {} to {}",
                 dir_block.repo_path, dir_block.system_path
             );
+
+            // In order to manage trailing / in paths
+            // TODO -- TEST -- Test if presence or absence of trailing / generates problems
+            let path = std::path::Path::new(&self.repo_base).join(&dir_block.repo_path);
+            let from = path.to_str().unwrap();
+
+            let to = &dir_block.system_path;
+
             match &dir_block.sync_type {
                 DirFileType::File => {
-                    // TODO -- not considering repo_base
-                    let from = &dir_block.repo_path;
-                    let to = &dir_block.system_path;
                     match std::fs::copy(from, to) {
                         Err(err) => {
                             eprintln!("Error copying file {} to file {}", from, to);
@@ -57,10 +63,6 @@ impl DirectoriesDescr {
 
                 DirFileType::Dir => {
                     create_dir_if_not_exists(&dir_block.system_path);
-
-                    // TODO -- not considering repo_base
-                    let from = &dir_block.repo_path;
-                    let to = &dir_block.system_path;
                     copy_dir_recursively(from, to);
                 }
             }
