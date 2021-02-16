@@ -2,7 +2,7 @@ mod CommandProcessor;
 mod ArgParser;
 mod YamlProcessor;
 mod Installer;
-mod Downloader;
+mod DirSync;
 
 fn main() {
     let arg_parser = ArgParser::parse_args();
