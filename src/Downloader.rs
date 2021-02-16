@@ -25,8 +25,6 @@ pub enum DirFileType {
 #[derive(Debug)]
 pub struct DirectoriesDescr {
     repo_base: String,
-
-    // TODO -- TYPO
     dir_blocks: Vec<DirBlock>,
 }
 
@@ -47,21 +45,8 @@ impl DirectoriesDescr {
             println!("==> Downloading {} to {}", from, to);
 
             match &dir_block.sync_type {
-                DirFileType::File => {
-                    match std::fs::copy(from, to) {
-                        Err(err) => {
-                            eprintln!("Error copying file {} to file {}", from, to);
-                            eprintln!("Error code was {}", err);
-                            exit(-1);
-                        }
-                        Ok(_) => (),
-                    };
-                }
-
-                DirFileType::Dir => {
-                    create_dir_if_not_exists(to);
-                    copy_dir_recursively(from, to);
-                }
+                DirFileType::File => DirectoriesDescr::sync_file(from, to),
+                DirFileType::Dir => DirectoriesDescr::sync_dir(from, to),
             }
         }
     }
@@ -69,6 +54,7 @@ impl DirectoriesDescr {
     /// Uploads files from system to the repo
     pub fn upload_from_system_to_repo(&self) {
         for dir_block in &self.dir_blocks {
+
             // In order to manage trailing / in paths
             // TODO -- TEST -- Test if presence or absence of trailing / generates problems
             let to = std::path::Path::new(&self.repo_base).join(&dir_block.repo_path);
@@ -78,23 +64,26 @@ impl DirectoriesDescr {
             println!("==> Uploading {} to {}", from, to);
 
             match &dir_block.sync_type {
-                DirFileType::File => {
-                    match std::fs::copy(from, to) {
-                        Err(err) => {
-                            eprintln!("Error copying file {} to file {}", from, to);
-                            eprintln!("Error code was {}", err);
-                            exit(-1);
-                        }
-                        Ok(_) => (),
-                    };
-                }
-
-                DirFileType::Dir => {
-                    create_dir_if_not_exists(to);
-                    copy_dir_recursively(from, to);
-                }
+                DirFileType::File => DirectoriesDescr::sync_file(from, to),
+                DirFileType::Dir => DirectoriesDescr::sync_dir(from, to),
             }
         }
+    }
+
+    fn sync_file(from: &str, to: &str) {
+        match std::fs::copy(from, to) {
+            Err(err) => {
+                eprintln!("Error copying file {} to file {}", from, to);
+                eprintln!("Error code was {}", err);
+                exit(-1);
+            }
+            Ok(_) => (),
+        };
+    }
+
+    fn sync_dir(from: &str, to: &str) {
+        create_dir_if_not_exists(to);
+        copy_dir_recursively(from, to);
     }
 }
 
