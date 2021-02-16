@@ -11,7 +11,7 @@ pub fn handle_download() {
     let dir_descr = parse_yaml_directories("/home/sergio/GitProjects/punto/directories.yaml");
 
     // Download
-    dir_descr.dowload_from_repo_to_system();
+    dir_descr.download_from_repo_to_system();
 }
 
 #[derive(Debug)]
@@ -26,17 +26,17 @@ pub struct DirectoriesDescr {
     repo_base: String,
 
     // TODO -- TYPO
-    dir_blocs: Vec<DirBlock>,
+    dir_blocks: Vec<DirBlock>,
 }
 
 impl DirectoriesDescr {
     pub fn push(&mut self, dir_block: DirBlock) {
-        self.dir_blocs.push(dir_block);
+        self.dir_blocks.push(dir_block);
     }
 
     /// Downloads files from repo to the system
-    pub fn dowload_from_repo_to_system(&self) {
-        for dir_block in &self.dir_blocs {
+    pub fn download_from_repo_to_system(&self) {
+        for dir_block in &self.dir_blocks {
             println!(
                 "==> Downloading {} to {}",
                 dir_block.repo_path, dir_block.system_path
@@ -107,7 +107,7 @@ pub fn parse_yaml_directories(file_path: &str) -> DirectoriesDescr {
             .as_str()
             .expect("repo_base: <path> is not specified well")
             .to_string(),
-        dir_blocs: vec![],
+        dir_blocks: vec![],
     };
 
     // Yaml section of files
