@@ -1,7 +1,6 @@
 use crate::CommandProcessor;
 use crate::Installer;
 use crate::DirSync;
-use std::collections::HashMap;
 
 fn not_found_command(command: String) {
     println!("Command {} is not valid", command);
