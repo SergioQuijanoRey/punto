@@ -10,8 +10,9 @@ pub fn parse_args_and_launch_commands() {
 }
 
 /// Generates the matches structure, defining inputs by hand
+/// Also metainformation about the cli app is set here
 fn generate_matches() -> ArgMatches<'static>{
-    let matches = App::new("punto -- dotfiles manager")
+    let app = App::new("punto -- dotfiles manager")
         .version("0.1")
         .author("Sergio Quijano <sergiquijano@gmail.com>")
         .about("Another dotfiles manager")
@@ -20,7 +21,7 @@ fn generate_matches() -> ArgMatches<'static>{
                 .short("-s")
                 .long("--shell")
                 .value_name("yaml_file")
-                .help("Launchs shell commands from yaml file")
+                .help("Launchs shell commands from yaml file").
                 .takes_value(true),
         )
         .arg(
@@ -46,15 +47,16 @@ fn generate_matches() -> ArgMatches<'static>{
                 .value_name("yaml_file")
                 .help("Syncs files and dirs from your system to repo")
                 .takes_value(true),
-        )
-        .get_matches();
+        );
 
+    let matches = app.get_matches();
     return matches;
 
 }
 
 /// Calls the functions given the cli parameters
 fn call_handlers(matches: ArgMatches) {
+    // TODO -- this should go in a structure somehow, relating how matches struct was generated
     let arg_names = vec![
         "shell command",
         "install command",
