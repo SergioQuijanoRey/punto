@@ -66,8 +66,10 @@ fn parse_yaml_installer(file_path: &str) -> Vec<InstallerBlock> {
 
     for (key, value) in parsed_contents.as_hash().unwrap() {
         let name = key.as_str().unwrap().to_string();
-        let install_command = value["install_command"].as_str().unwrap().to_string();
-        let packages = value["packages"].as_vec().unwrap();
+        let install_command = value["install_command"].as_str().expect("Install command cannot be retreived").to_string();
+
+        let empty_packages_vec = vec![];
+        let packages = value["packages"].as_vec().unwrap_or(&empty_packages_vec);
         let packages: Vec<String> = packages
             .into_iter()
             .map(|package| package.as_str().unwrap().to_string())
