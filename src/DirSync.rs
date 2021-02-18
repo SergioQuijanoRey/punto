@@ -4,12 +4,11 @@ use std::fs;
 use std::path::Path;
 use std::process::exit;
 
-pub fn handle_download() {
+pub fn handle_download(yaml_file: &str) {
     println!("==> Getting files from git repo to your system!");
 
     // Get directives from yaml file
-    // TODO -- hardcoded path
-    let dir_descr = parse_yaml_directories("/home/sergio/GitProjects/punto/directories.yaml");
+    let dir_descr = parse_yaml_directories(yaml_file);
 
     // Download
     dir_descr.download_from_repo_to_system();
@@ -187,12 +186,11 @@ fn copy_dir_recursively(from: &str, to: &str) {
     };
 }
 
-pub fn handle_upload() {
+pub fn handle_upload(yaml_file: &str) {
     println!("==> Uploading files from your system to the repo");
 
     // Get directives from yaml file
-    // TODO -- hardcoded path
-    let dir_descr = parse_yaml_directories("/home/sergio/GitProjects/punto/directories.yaml");
+    let dir_descr = parse_yaml_directories(yaml_file);
 
     // Upload
     dir_descr.upload_from_system_to_repo();

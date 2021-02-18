@@ -1,105 +1,64 @@
 use crate::CommandProcessor;
-use crate::Installer;
 use crate::DirSync;
+use crate::Installer;
+use clap::{App, Arg, ArgMatches};
 
-fn not_found_command(command: String) {
-    println!("Command {} is not valid", command);
-    show_help();
+// TODO -- better naming
+pub fn new_arg_parser() {
+    let matches = App::new("punto -- dotfiles manager")
+        .version("0.1")
+        .author("Sergio Quijano <sergiquijano@gmail.com>")
+        .about("Another dotfiles manager")
+        .arg(
+            Arg::with_name("shell command")
+                .short("-s")
+                .long("--shell")
+                .value_name("yaml_file")
+                .help("Launchs shell commands from yaml file")
+                .takes_value(true),
+        )
+        .arg(
+            Arg::with_name("install command")
+                .short("-i")
+                .long("--install")
+                .value_name("yaml_file")
+                .help("Installs packages from yaml file")
+                .takes_value(true),
+        )
+        .arg(
+            Arg::with_name("download command")
+                .short("-d")
+                .long("--download")
+                .value_name("yaml_file")
+                .help("Syncs files and dirs from repo to your system ")
+                .takes_value(true),
+        )
+        .arg(
+            Arg::with_name("upload command")
+                .short("-u")
+                .long("--upload")
+                .value_name("yaml_file")
+                .help("Syncs files and dirs from your system to repo")
+                .takes_value(true),
+        )
+        .get_matches();
+
+
+    call_handlers(matches);
 }
 
-fn show_help() {
-    println!("Punto usage:");
-    println!("\tpunto --install: install all packages, defined in install.yml");
-    println!("\tpunto --shell: run custom shell scripts, defined in shell.yml");
-    println!("\tpunto --all: run all of above commands");
-    println!("\tpunto --help: shows this help");
-}
+fn call_handlers(matches: ArgMatches){
+    for arg_name in vec!["shell command", "install command", "download command", "upload command"]{
+        if matches.is_present(arg_name){
+            let yaml_file = matches.value_of(arg_name).unwrap();
 
-type CallBack = fn() -> ();
-pub struct Handler {
-    arg_input: String,
-    handler: Box<CallBack>,
-}
-
-impl Handler {
-    pub fn new(arg_input: String, handler: CallBack) -> Self {
-        return Handler {
-            arg_input,
-            handler: Box::new(handler),
-        };
-    }
-
-    /// Runs the callback for the Handler
-    pub fn launch_callback(&self) {
-        (self.handler)();
-    }
-}
-
-pub struct ArgParser {
-    handlers: Vec<Handler>,
-}
-
-impl ArgParser {
-    pub fn new() -> Self {
-        return ArgParser { handlers: vec![] };
-    }
-
-    pub fn add_handler(&mut self, handler: Handler) {
-        self.handlers.push(handler);
-    }
-
-    /// Finds a handler by its arg_input
-    pub fn find_handler(&self, arg_input: String) -> Option<&Handler> {
-        for handler in &self.handlers {
-            if handler.arg_input == arg_input {
-                return Some(handler);
+            match arg_name{
+                "shell command" => CommandProcessor::handle_shell_command(yaml_file),
+                "install command" => Installer::handle_install_command(yaml_file),
+                "download command" => DirSync::handle_download(yaml_file),
+                "upload command" => DirSync::handle_upload(yaml_file),
+                _ => println!("Command not recognized")
             }
         }
-
-        return None;
-    }
-}
-
-fn show_version(){
-    println!("punto v0.0.1 -- Still in development");
-}
-
-/// Gets my arg parser, defined by hand
-pub fn parse_args() -> ArgParser {
-    // Arguments and their callbacks
-
-    let mut arg_parser = ArgParser::new();
-    arg_parser.add_handler(Handler::new(
-        "--install".to_string(),
-        Installer::handle_install_command,
-    ));
-    arg_parser.add_handler(Handler::new(
-        "--shell".to_string(),
-        CommandProcessor::handle_shell_command,
-    ));
-    arg_parser.add_handler(Handler::new("--download".to_string(), DirSync::handle_download));
-    arg_parser.add_handler(Handler::new("--upload".to_string(), DirSync::handle_upload));
-    arg_parser.add_handler(Handler::new("--help".to_string(), show_help));
-    arg_parser.add_handler(Handler::new("--version".to_string(), show_version));
-    arg_parser.add_handler(Handler::new("-v".to_string(), show_version));
-
-    return arg_parser;
-}
-
-/// Launchs the callbacks for given args by cli command
-pub fn launch_arg_handlers(arg_parser: ArgParser) {
-    // Iterate over given arguments
-    let args = std::env::args();
-    for (indx, arg) in args.enumerate() {
-        // First arg is the cli app name
-        if indx == 0 {
-            continue;
-        }
-
-        let command = arg_parser.find_handler(arg.clone());
-        match command {
-            Some(command) => command.launch_callback(),
-            None => not_found_command(arg),
-        };
     }
 }

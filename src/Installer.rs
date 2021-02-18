@@ -35,9 +35,9 @@ impl InstallerBlock {
 }
 
 /// Callback for --install cli arg
-pub fn handle_install_command() {
+pub fn handle_install_command(yaml_file: &str) {
     println!("Installing packages");
-    let installer_blocks = parse_yaml_installer("./packages.yaml");
+    let installer_blocks = parse_yaml_installer(yaml_file);
 
     for block in installer_blocks {
         println!("Installing {} block", block.name);

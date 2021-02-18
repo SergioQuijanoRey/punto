@@ -56,10 +56,10 @@ impl CommandBlock {
 
 /// Handler to --shell cli argument
 /// Reads the shell yaml config file and executes commands described in the yaml file
-pub fn handle_shell_command() {
+pub fn handle_shell_command(yaml_file: &str) {
     println!("Running shell commands defined in shell.yaml");
     println!("================================================================================");
-    let command_blocks = parse_yaml_command("/home/sergio/GitProjects/punto/shell.yaml");
+    let command_blocks = parse_yaml_command(yaml_file);
     for command in command_blocks {
         command.execute();
     }
