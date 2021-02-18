@@ -3,8 +3,14 @@ use crate::DirSync;
 use crate::Installer;
 use clap::{App, Arg, ArgMatches};
 
-// TODO -- better naming
-pub fn new_arg_parser() {
+/// Parses the args and launchs commands depending on user input
+pub fn parse_args_and_launch_commands() {
+    let matches = generate_matches();
+    call_handlers(matches);
+}
+
+/// Generates the matches structure, defining inputs by hand
+fn generate_matches() -> ArgMatches<'static>{
     let matches = App::new("punto -- dotfiles manager")
         .version("0.1")
         .author("Sergio Quijano <sergiquijano@gmail.com>")
@@ -43,21 +49,29 @@ pub fn new_arg_parser() {
         )
         .get_matches();
 
+    return matches;
 
-    call_handlers(matches);
 }
 
-fn call_handlers(matches: ArgMatches){
-    for arg_name in vec!["shell command", "install command", "download command", "upload command"]{
-        if matches.is_present(arg_name){
+/// Calls the functions given the cli parameters
+fn call_handlers(matches: ArgMatches) {
+    let arg_names = vec![
+        "shell command",
+        "install command",
+        "download command",
+        "upload command",
+    ];
+
+    for arg_name in arg_names {
+        if matches.is_present(arg_name) {
             let yaml_file = matches.value_of(arg_name).unwrap();
 
-            match arg_name{
+            match arg_name {
                 "shell command" => CommandProcessor::handle_shell_command(yaml_file),
                 "install command" => Installer::handle_install_command(yaml_file),
                 "download command" => DirSync::handle_download(yaml_file),
                 "upload command" => DirSync::handle_upload(yaml_file),
-                _ => println!("Command not recognized")
+                _ => println!("Command not recognized"),
             }
         }
     }

@@ -5,7 +5,5 @@ mod Installer;
 mod DirSync;
 
 fn main() {
-    //let arg_parser = ArgParser::parse_args();
-    //ArgParser::launch_arg_handlers(arg_parser);
-    ArgParser::new_arg_parser();
+    ArgParser::parse_args_and_launch_commands();
 }
