@@ -22,11 +22,32 @@
 
 * Test that your dotfiles can be installed inside an isolated container
 
+## Usage
+
+~~~bash
+punto -- dotfiles manager 0.1
+Sergio Quijano <sergiquijano@gmail.com>
+Another dotfiles manager
+
+USAGE:
+    punto [OPTIONS]
+
+FLAGS:
+    -h, --help       Prints help information
+    -V, --version    Prints version information
+
+OPTIONS:
+    -d, --download <yaml_file>    Syncs files and dirs from repo to your system
+    -i, --install <yaml_file>     Installs packages from yaml file
+    -s, --shell <yaml_file>       Launchs shell commands from yaml file
+    -u, --upload <yaml_file>      Syncs files and dirs from your system to repo
+~~~
+
 ## Examples
 
 ### `shell.yaml`
 
-Run `punto --shell`
+Run `punto --shell shell.yaml`
 
 ~~~yaml
 list_dir:
@@ -72,7 +93,7 @@ install other:
 
 ### `packages.yaml`
 
-Run `punto --install`
+Run `punto --install packages.yaml`
 
 ~~~yaml
 common:
@@ -105,7 +126,7 @@ aur:
 
 ### `directories.yaml`
 
-Run `punto --download` or `punto --upload`
+Run `punto --download directories.yaml` or `punto --upload directories.yaml`
 
 ~~~yaml
 # Where the dotfiles repo is located

@@ -21,7 +21,7 @@ fn generate_matches() -> ArgMatches<'static>{
                 .short("-s")
                 .long("--shell")
                 .value_name("yaml_file")
-                .help("Launchs shell commands from yaml file").
+                .help("Launchs shell commands from yaml file")
                 .takes_value(true),
         )
         .arg(
