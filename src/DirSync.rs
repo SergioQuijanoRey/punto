@@ -132,7 +132,7 @@ pub fn parse_yaml_directories(file_path: &str) -> DirectoriesDescr {
         // We ignore the name of the block
         for (_, value) in dir_block.as_hash().unwrap() {
             // Default or error type is File
-            let sync_type = value["sync_type"].as_str().unwrap();
+            let sync_type = value["sync_type"].as_str().unwrap_or("file");
             let sync_type = if sync_type == "dir" {
                 DirFileType::Dir
             } else {
