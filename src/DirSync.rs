@@ -70,6 +70,11 @@ impl DirectoriesDescr {
     }
 
     fn sync_file(from: &str, to: &str) {
+
+        // Create parent dir if not exists
+        let to_parent_dir = std::path::Path::new(to).parent().expect(&format!("Could not get parent dir of file {}", to));
+        create_dir_if_not_exists(to_parent_dir.to_str().expect("Could not parse parent dir to string"));
+
         match std::fs::copy(from, to) {
             Err(err) => {
                 eprintln!("Error copying file {} to file {}", from, to);
