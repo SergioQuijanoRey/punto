@@ -72,8 +72,8 @@ impl DirectoriesDescr {
     fn sync_file(from: &str, to: &str) {
 
         // Create parent dir if not exists
-        let to_parent_dir = std::path::Path::new(to).parent().expect(&format!("Could not get parent dir of file {}", to));
-        create_dir_if_not_exists(to_parent_dir.to_str().expect("Could not parse parent dir to string"));
+        let to_parent_dir = DirectoriesDescr::parent_dir(to);
+        create_dir_if_not_exists(to_parent_dir);
 
         match std::fs::copy(from, to) {
             Err(err) => {
@@ -85,11 +85,18 @@ impl DirectoriesDescr {
         };
     }
 
-    // TODO -- BUG -- for example, syncs $path/backgrounds/backgrounds instead
-    // of $path/backgrounds
     fn sync_dir(from: &str, to: &str) {
-        create_dir_if_not_exists(to);
-        copy_dir_recursively(from, to);
+        let to_parent_dir = DirectoriesDescr::parent_dir(to);
+        create_dir_if_not_exists(to_parent_dir);
+        copy_dir_recursively(from, to_parent_dir);
+    }
+
+    /// Gets the str path of the parent dir
+    /// If to is a file path, gets is dir where its allocated
+    /// If to is a dir, gets its parent dir
+    fn parent_dir(to: &str) -> &str{
+        let to_parent_dir = std::path::Path::new(to).parent().expect(&format!("Could not get parent dir of {}", to));
+        return to_parent_dir.to_str().expect(&format!("Could not get string from {} parent", to));
     }
 }
 
