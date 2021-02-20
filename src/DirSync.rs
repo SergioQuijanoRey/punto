@@ -183,8 +183,6 @@ fn create_dir_if_not_exists(path: &str) {
 }
 
 /// Copies one dir to other recursively
-// TODO -- BUG -- for example, syncs $path/backgrounds/backgrounds instead
-// of $path/backgrounds
 fn copy_dir_recursively(from: &str, to: &str) {
     let from = vec![from];
 
