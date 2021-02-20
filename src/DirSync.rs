@@ -85,6 +85,9 @@ impl DirectoriesDescr {
         };
     }
 
+    // TODO -- BUG -- not removing deprecated files
+    // ie, when wallpaper is removed, sync_dir wont remove that wallpaper on to
+    // dir
     fn sync_dir(from: &str, to: &str) {
         let to_parent_dir = DirectoriesDescr::parent_dir(to);
         create_dir_if_not_exists(to_parent_dir);
