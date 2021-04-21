@@ -7,7 +7,9 @@
 * All actions performed with the same cli app
 * Heavily inspired on [dotbot](https://github.com/anishathalye/dotbot)
 * All actions that can be performed will be described in `yaml` config files that punto reads and executes
-* When usable, this project will be used in [my dotfiles](https://github.com/sergioquijanorey/dotfiles)
+    * Therefore, you can create your own structures as you like, no fixed structure imposed to you
+* This project is used on [my personal dotfiles](https://github.com/sergioquijanorey/dotfiles)
+* **Not stable at the moment**. See the TODO list at the end.
 
 ## Actions that you can perform with punto
 
@@ -144,3 +146,8 @@ directories:
         repo_path: ./src/
         system_path: /home/sergio/codigo_de_pruebas
 ~~~
+
+# TODO
+
+* [ ] Add the capability to ignore files or subdirectories (`exclude` field in the `yaml` file)
+* [ ] Copies don't delete files which are no longer present in the origin source (sync behaviour wanted)
