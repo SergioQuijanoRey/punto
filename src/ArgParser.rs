@@ -84,7 +84,16 @@ fn call_handlers(matches: ArgMatches) {
 
             match arg_name {
                 &"shell command" => CommandProcessor::handle_shell_command(yaml_file),
-                &"install command" => Installer::handle_install_command(yaml_file),
+                &"install command" => {
+
+                    // Check if we passed --section parameter
+                    let section = matches.value_of("specify install section");
+                    println!("TODO -- section is {:?}", section);
+
+                    // We launch the installer using this parameter (which can be None)
+                    Installer::handle_install_command(yaml_file, section);
+                },
+
                 &"download command" => DirSync::handle_download(yaml_file),
                 &"upload command" => DirSync::handle_upload(yaml_file),
                 _ => println!("Command not recognized"),

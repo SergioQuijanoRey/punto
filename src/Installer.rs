@@ -2,24 +2,26 @@ use crate::CommandProcessor;
 use crate::YamlProcessor;
 use std::process::exit;
 
+/// Represents a section of a installer .yaml specification
 #[derive(Debug)]
-struct InstallerBlock {
+struct InstallerSection {
     name: String,
     install_command: String,
     packages: Vec<String>,
 }
 
-impl InstallerBlock {
-    /// Creates a new InstallerBlock struct
+impl InstallerSection {
+    /// Creates a new InstallerSection struct
     pub fn new(name: String, install_command: String, packages: Vec<String>) -> Self {
-        return InstallerBlock {
+        return InstallerSection {
             name,
             install_command,
             packages,
         };
     }
 
-    /// Installs all the packages described in the InstallerBlock
+    /// Installs all the packages described in the InstallerSection
+    // TODO -- BUG -- user needs to input the password for each package
     pub fn install_all_packages(&self) {
         for package in &self.packages {
             let command = format!("{} {}", self.install_command, package);
@@ -35,22 +37,48 @@ impl InstallerBlock {
 }
 
 /// Callback for --install cli arg
-pub fn handle_install_command(yaml_file: &str) {
-    println!("Installing packages");
-    let installer_blocks = parse_yaml_installer(yaml_file);
+/// # Arguments
+/// - `yaml_file`: file path of the yaml file containing install specification
+/// - `section`: section of the specification to install. If it is None, all sections are installed
+pub fn handle_install_command(yaml_file: &str, section: Option<&str>) {
+    match section{
+        None => {
+            println!("📦 Installing packages -- all sections");
+            install_all_sections(yaml_file);
+        }
 
-    for block in installer_blocks {
-        println!("Installing {} block", block.name);
+        Some(section) => {
+            println!("📦 Installing packages -- section {}", section);
+            install_section(yaml_file, &section);
+        }
+    }
+}
+
+/// Installs all the sections specified in the given yaml file
+fn install_all_sections(yaml_file: &str){
+    let installer_sections = parse_yaml_installer(yaml_file);
+    for section in installer_sections {
+        println!("Installing {} block", section.name);
         println!(
             "================================================================================"
         );
-        block.install_all_packages();
+        section.install_all_packages();
 
     }
 }
 
-/// Given a installer yaml file, returns a vector with its InstallerBlocks
-fn parse_yaml_installer(file_path: &str) -> Vec<InstallerBlock> {
+/// Install given section, and only that section
+fn install_section(yaml_file: &str, section: &str){
+    let installer_sections = parse_yaml_installer(yaml_file);
+    for curr_section in installer_sections {
+        if curr_section.name == section{
+            curr_section.install_all_packages();
+        }
+    }
+}
+
+/// Given a installer yaml file, returns a vector with its InstallerSection
+fn parse_yaml_installer(file_path: &str) -> Vec<InstallerSection> {
     let parsed_contents = YamlProcessor::parse_yaml(file_path);
     // TODO -- this block of code is repeated
     let parsed_contents = match parsed_contents{
@@ -74,7 +102,7 @@ fn parse_yaml_installer(file_path: &str) -> Vec<InstallerBlock> {
             .into_iter()
             .map(|package| package.as_str().unwrap().to_string())
             .collect();
-        installer_blocks.push(InstallerBlock {
+        installer_blocks.push(InstallerSection {
             name,
             install_command,
             packages,
