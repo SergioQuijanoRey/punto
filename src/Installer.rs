@@ -21,7 +21,6 @@ impl InstallerSection {
     }
 
     /// Installs all the packages described in the InstallerSection
-    // TODO -- BUG -- user needs to input the password for each package
     pub fn install_all_packages(&self) {
         for package in &self.packages {
             let command = format!("{} {}", self.install_command, package);
