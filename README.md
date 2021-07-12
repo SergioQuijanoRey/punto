@@ -147,7 +147,6 @@ directories:
         system_path: /home/sergio/codigo_de_pruebas
 ~~~
 
-# TODO
+# TODOs
 
-* [ ] Add the capability to ignore files or subdirectories (`exclude` field in the `yaml` file)
-* [ ] Copies don't delete files which are no longer present in the origin source (sync behaviour wanted)
+* See [issues](https://github.com/SergioQuijanoRey/punto/issues) for all bugs and feature requests
