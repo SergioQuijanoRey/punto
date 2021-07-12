@@ -1,11 +1,20 @@
-use crate::YamlProcessor;
 use fs_extra;
 use std::fs;
 use std::path::Path;
 use std::process::exit;
+use crate::DirSync::dir_file_type::DirFileType;
+use crate::YamlProcessor;
 
+pub mod directories_descr;
+pub mod dir_block;
+pub mod dir_file_type;
+
+use crate::DirSync::directories_descr::DirectoriesDescr;
+use crate::DirSync::dir_block::DirBlock;
+
+/// Handle the download command
 pub fn handle_download(yaml_file: &str) {
-    println!("==> Getting files from git repo to your system!");
+    println!("📂 Getting files from git repo to your system!");
 
     // Get directives from yaml file
     let dir_descr = parse_yaml_directories(yaml_file);
@@ -14,111 +23,15 @@ pub fn handle_download(yaml_file: &str) {
     dir_descr.download_from_repo_to_system();
 }
 
-#[derive(Debug)]
-pub enum DirFileType {
-    File,
-    Dir,
-}
+/// Handle the upload command
+pub fn handle_upload(yaml_file: &str) {
+    println!("📂 Uploading files from your system to the repo");
 
-/// Represent the directories yaml description
-#[derive(Debug)]
-pub struct DirectoriesDescr {
-    repo_base: String,
-    dir_blocks: Vec<DirBlock>,
-}
+    // Get directives from yaml file
+    let dir_descr = parse_yaml_directories(yaml_file);
 
-impl DirectoriesDescr {
-    pub fn push(&mut self, dir_block: DirBlock) {
-        self.dir_blocks.push(dir_block);
-    }
-
-    /// Downloads files from repo to the system
-    pub fn download_from_repo_to_system(&self) {
-        for dir_block in &self.dir_blocks {
-            // In order to manage trailing / in paths
-            // TODO -- TEST -- Test if presence or absence of trailing / generates problems
-            let path = std::path::Path::new(&self.repo_base).join(&dir_block.repo_path);
-            let from = path.to_str().unwrap();
-
-            let to = &dir_block.system_path;
-            println!("==> Downloading {} to {}", from, to);
-
-            match &dir_block.sync_type {
-                DirFileType::File => DirectoriesDescr::sync_file(from, to),
-                DirFileType::Dir => DirectoriesDescr::sync_dir(from, to),
-            }
-        }
-    }
-
-    /// Uploads files from system to the repo
-    pub fn upload_from_system_to_repo(&self) {
-        for dir_block in &self.dir_blocks {
-
-            // In order to manage trailing / in paths
-            // TODO -- TEST -- Test if presence or absence of trailing / generates problems
-            let to = std::path::Path::new(&self.repo_base).join(&dir_block.repo_path);
-            let to = to.to_str().unwrap();
-
-            let from = &dir_block.system_path;
-            println!("==> Uploading {} to {}", from, to);
-
-            match &dir_block.sync_type {
-                DirFileType::File => DirectoriesDescr::sync_file(from, to),
-                DirFileType::Dir => DirectoriesDescr::sync_dir(from, to),
-            }
-        }
-    }
-
-    fn sync_file(from: &str, to: &str) {
-
-        // Create parent dir if not exists
-        let to_parent_dir = DirectoriesDescr::parent_dir(to);
-        create_dir_if_not_exists(to_parent_dir);
-
-        match std::fs::copy(from, to) {
-            Err(err) => {
-                eprintln!("Error copying file {} to file {}", from, to);
-                eprintln!("Error code was {}", err);
-                exit(-1);
-            }
-            Ok(_) => (),
-        };
-    }
-
-    // TODO -- BUG -- not removing deprecated files
-    // ie, when wallpaper is removed, sync_dir wont remove that wallpaper on to
-    // dir
-    fn sync_dir(from: &str, to: &str) {
-        let to_parent_dir = DirectoriesDescr::parent_dir(to);
-        create_dir_if_not_exists(to_parent_dir);
-        copy_dir_recursively(from, to_parent_dir);
-    }
-
-    /// Gets the str path of the parent dir
-    /// If to is a file path, gets is dir where its allocated
-    /// If to is a dir, gets its parent dir
-    fn parent_dir(to: &str) -> &str{
-        let to_parent_dir = std::path::Path::new(to).parent().expect(&format!("Could not get parent dir of {}", to));
-        return to_parent_dir.to_str().expect(&format!("Could not get string from {} parent", to));
-    }
-}
-
-/// Represent a dir block inside yaml description
-#[derive(Debug)]
-pub struct DirBlock {
-    repo_path: String,
-    system_path: String,
-    sync_type: DirFileType,
-}
-
-impl DirBlock {
-    pub fn new(repo_path: String, system_path: String, sync_type: DirFileType) -> Self {
-        return DirBlock {
-            repo_path,
-            system_path,
-            sync_type,
-        };
-    }
+    // Upload
+    dir_descr.upload_from_system_to_repo();
 }
 
 /// From yaml description of the directories sync, gets the DirectoriesDescr struct
@@ -135,13 +48,13 @@ pub fn parse_yaml_directories(file_path: &str) -> DirectoriesDescr {
     };
 
     // We get the repo_base section from the yaml file
-    let mut dir_descr = DirectoriesDescr {
-        repo_base: parsed_contents["repo_base"]
+    let mut dir_descr = DirectoriesDescr::new(
+        parsed_contents["repo_base"]
             .as_str()
             .expect("repo_base: <path> is not specified well")
             .to_string(),
-        dir_blocks: vec![],
-    };
+        vec![],
+    );
 
     // Yaml section of files
     let dir_blocks = parsed_contents["directories"].as_vec().unwrap();
@@ -201,14 +114,4 @@ fn copy_dir_recursively(from: &str, to: &str) {
         }
         Ok(_) => (),
     };
-}
-
-pub fn handle_upload(yaml_file: &str) {
-    println!("==> Uploading files from your system to the repo");
-
-    // Get directives from yaml file
-    let dir_descr = parse_yaml_directories(yaml_file);
-
-    // Upload
-    dir_descr.upload_from_system_to_repo();
 }
