@@ -1,8 +1,6 @@
-use crate::DirSync::file_operations::create_dir_if_not_exists;
+use crate::DirSync::file_operations::{create_dir_if_not_exists, sync_dir, sync_file};
 use crate::DirSync::{dir_file_type::DirFileType, exit};
 use crate::DirSync::DirBlock;
-
-use super::file_operations::copy_dir_recursively;
 
 /// Represent the directories yaml description
 /// This representation is based on a set of dirblocks
@@ -38,7 +36,6 @@ impl DirectoriesDescr {
         }
 
         return true;
-
     }
 
     /// Appends a new DirBlock to the struct
@@ -58,8 +55,8 @@ impl DirectoriesDescr {
             println!("==> Downloading {} to {}", from, to);
 
             match &dir_block.sync_type() {
-                DirFileType::File => DirectoriesDescr::sync_file(from, to),
-                DirFileType::Dir => DirectoriesDescr::sync_dir(from, to),
+                DirFileType::File => sync_file(from, to),
+                DirFileType::Dir => sync_dir(from, to),
             }
         }
     }
@@ -77,42 +74,9 @@ impl DirectoriesDescr {
             println!("==> Uploading {} to {}", from, to);
 
             match &dir_block.sync_type() {
-                DirFileType::File => DirectoriesDescr::sync_file(from, to),
-                DirFileType::Dir => DirectoriesDescr::sync_dir(from, to),
+                DirFileType::File => sync_file(from, to),
+                DirFileType::Dir => sync_dir(from, to),
             }
         }
-    }
-
-    fn sync_file(from: &str, to: &str) {
-
-        // Create parent dir if not exists
-        let to_parent_dir = DirectoriesDescr::parent_dir(to);
-        create_dir_if_not_exists(to_parent_dir);
-
-        match std::fs::copy(from, to) {
-            Err(err) => {
-                eprintln!("Error copying file {} to file {}", from, to);
-                eprintln!("Error code was {}", err);
-                exit(-1);
-            }
-            Ok(_) => (),
-        };
-    }
-
-    // TODO -- BUG -- not removing deprecated files
-    // ie, when wallpaper is removed, sync_dir wont remove that wallpaper on to
-    // dir
-    fn sync_dir(from: &str, to: &str) {
-        let to_parent_dir = DirectoriesDescr::parent_dir(to);
-        create_dir_if_not_exists(to_parent_dir);
-        copy_dir_recursively(from, to_parent_dir);
-    }
-
-    /// Gets the str path of the parent dir
-    /// If to is a file path, gets is dir where its allocated
-    /// If to is a dir, gets its parent dir
-    fn parent_dir(to: &str) -> &str{
-        let to_parent_dir = std::path::Path::new(to).parent().expect(&format!("Could not get parent dir of {}", to));
-        return to_parent_dir.to_str().expect(&format!("Could not get string from {} parent", to));
     }
 }
