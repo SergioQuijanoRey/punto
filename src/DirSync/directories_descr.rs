@@ -1,6 +1,8 @@
+use crate::DirSync::file_operations::create_dir_if_not_exists;
 use crate::DirSync::{dir_file_type::DirFileType, exit};
-use crate::DirSync::{DirBlock, create_dir_if_not_exists};
-use super::copy_dir_recursively;
+use crate::DirSync::DirBlock;
+
+use super::file_operations::copy_dir_recursively;
 
 /// Represent the directories yaml description
 #[derive(Debug)]

@@ -1,6 +1,3 @@
-use fs_extra;
-use std::fs;
-use std::path::Path;
 use std::process::exit;
 use crate::DirSync::dir_file_type::DirFileType;
 use crate::YamlProcessor;
@@ -8,6 +5,7 @@ use crate::YamlProcessor;
 pub mod directories_descr;
 pub mod dir_block;
 pub mod dir_file_type;
+pub mod file_operations;
 
 use crate::DirSync::directories_descr::DirectoriesDescr;
 use crate::DirSync::dir_block::DirBlock;
@@ -81,37 +79,4 @@ pub fn parse_yaml_directories(file_path: &str) -> DirectoriesDescr {
     }
 
     return dir_descr;
-}
-
-/// Creates recursively a dir if does not exist
-fn create_dir_if_not_exists(path: &str) {
-    if Path::exists(Path::new(path)) == false {
-        println!("==> Dir {} does not exist, creating it...", path);
-        match fs::create_dir_all(path) {
-            Err(err) => {
-                eprintln!("Could not create dir {}", path);
-                eprintln!("Error code was {}", err);
-                exit(-1);
-            }
-            Ok(_) => (),
-        }
-    }
-}
-
-/// Copies one dir to other recursively
-fn copy_dir_recursively(from: &str, to: &str) {
-    let from = vec![from];
-
-    let mut copy_options = fs_extra::dir::CopyOptions::new();
-    copy_options.overwrite = true;
-    let copy_options = copy_options;
-
-    match fs_extra::copy_items(&from, to, &copy_options) {
-        Err(err) => {
-            eprintln!("Error copying dir {} to dir {}", from[0], to);
-            eprintln!("Error code was {}", err);
-            exit(-1);
-        }
-        Ok(_) => (),
-    };
 }
