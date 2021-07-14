@@ -5,9 +5,13 @@ use crate::DirSync::DirBlock;
 use super::file_operations::copy_dir_recursively;
 
 /// Represent the directories yaml description
+/// This representation is based on a set of dirblocks
 #[derive(Debug)]
 pub struct DirectoriesDescr {
+    /// All the dir blocks have the same repo_base path
     repo_base: String,
+
+    /// The dir blocks that make up the DirectoriesDescr
     dir_blocks: Vec<DirBlock>,
 }
 
@@ -15,7 +19,26 @@ impl DirectoriesDescr {
 
     /// Generates a new struct
     pub fn new(repo_base: String, dir_blocks: Vec<DirBlock>) -> Self {
-        return Self{repo_base, dir_blocks};
+        // Create and check the new struct
+        let new_struct = Self{repo_base, dir_blocks};
+        if new_struct.is_valid() == false{
+            panic!("New DirectoriesDescr struct is not valid");
+        }
+
+        return new_struct;
+    }
+
+    /// Checks if a DirectoriesDescr is valid
+    /// DirectoriesDescr is not valid when repo_base does not match all dir_blocks repo_base
+    fn is_valid(&self) -> bool{
+        for dir_block in &self.dir_blocks{
+            if dir_block.repo_path() != &self.repo_base{
+                return false;
+            }
+        }
+
+        return true;
+
     }
 
     /// Appends a new DirBlock to the struct
