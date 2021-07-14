@@ -1,6 +1,8 @@
 use crate::DirSync::dir_file_type::DirFileType;
 
 /// Represent a dir block inside yaml description
+/// A Dir Block is represented by the path of the git repo, the path in the system and the type of
+/// sync to be performed
 #[derive(Debug)]
 pub struct DirBlock {
     repo_path: String,
