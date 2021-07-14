@@ -3,6 +3,7 @@
 use std::{fs, path::Path, process::exit};
 
 /// Creates recursively a dir if does not exist
+// TODO -- not sure if it is creating dir recursively if depth is greater than 2
 pub fn create_dir_if_not_exists(path: &str) {
     if Path::exists(Path::new(path)) == false {
         println!("==> Dir {} does not exist, creating it...", path);
@@ -35,14 +36,22 @@ pub fn copy_dir_recursively(from: &str, to: &str) {
     };
 }
 
-// TODO -- BUG -- not removing deprecated files
-// ie, when wallpaper is removed, sync_dir wont remove that wallpaper on to
-// dir
+// TODO -- BUG -- if we specify path X/Y/Z contents get copied in path X/Y/
 /// Syncs two dirs.
 /// If the destionation dir does not exists, it gets created
+/// Sync means files and dirs not present in from path are deleted in to path if they are present
+/// there
 pub fn sync_dir(from: &str, to: &str) {
+    // We need the parent dir of destination dir
     let to_parent_dir = parent_dir(to);
+
+    // In order to have sync behaviour, delete all the contents of the destination dir
+    remove_dir_and_contents(to_parent_dir);
+
+    // Create the destination dir if does not exist (it should always not exists)
     create_dir_if_not_exists(to_parent_dir);
+
+    // Copy contents recursively
     copy_dir_recursively(from, to_parent_dir);
 }
 
@@ -71,3 +80,30 @@ pub fn sync_file(from: &str, to: &str) {
     };
 }
 
+
+/// Removes a given dir and all the contents
+/// Dir does not have to be empty, all contents inside dir will be deleted
+fn remove_dir_and_contents(dir_path: &str){
+
+    // Check if the dir already exists
+    // If it doesn't exist, do nothing
+    if dir_exists(dir_path) == false{
+        return;
+    }
+
+    let result = std::fs::remove_dir_all(dir_path);
+    match result{
+        Ok(()) => (),
+        Err(err) => {
+            eprintln!("Error trying to delete dir {} and all of its contents", dir_path);
+            eprintln!("Error code was: {}", err);
+            exit(-1);
+        }
+    }
+
+}
+
+/// Checks if a given dir exists
+fn dir_exists(dir_path: &str) -> bool{
+    return Path::new(dir_path).is_dir();
+}
