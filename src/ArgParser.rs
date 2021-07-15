@@ -88,7 +88,6 @@ fn call_handlers(matches: ArgMatches) {
 
                     // Check if we passed --section parameter
                     let section = matches.value_of("specify install section");
-                    println!("TODO -- section is {:?}", section);
 
                     // We launch the installer using this parameter (which can be None)
                     Installer::handle_install_command(yaml_file, section);

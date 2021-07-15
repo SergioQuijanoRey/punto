@@ -44,12 +44,13 @@ impl DirectoriesDescr {
     }
 
     /// Downloads files from repo to the system
+    /// Download in sync mode: can delete files in system that are not present in repo
     pub fn download_from_repo_to_system(&self) {
         for dir_block in &self.dir_blocks {
             // In order to manage trailing / in paths
             // TODO -- TEST -- Test if presence or absence of trailing / generates problems
-            let path = std::path::Path::new(&self.repo_base).join(&dir_block.repo_path());
-            let from = path.to_str().unwrap();
+            let from = std::path::Path::new(&self.repo_base).join(&dir_block.repo_path());
+            let from = from.to_str().unwrap();
 
             let to = &dir_block.system_path();
             println!("==> Downloading {} to {}", from, to);
@@ -62,6 +63,7 @@ impl DirectoriesDescr {
     }
 
     /// Uploads files from system to the repo
+    /// Upload in sync mode: can delete files in repo that are not present in system
     pub fn upload_from_system_to_repo(&self) {
         for dir_block in &self.dir_blocks {
 

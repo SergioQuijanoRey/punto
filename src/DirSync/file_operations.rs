@@ -20,15 +20,20 @@ pub fn create_dir_if_not_exists(path: &str) {
 
 /// Copies one dir to other recursively
 pub fn copy_dir_recursively(from: &str, to: &str) {
+
+    // copy_items expects a vector of files and dirs to copy from
     let from = vec![from];
 
+    // Options to the copy operation
     let mut copy_options = fs_extra::dir::CopyOptions::new();
     copy_options.overwrite = true;
-    let copy_options = copy_options;
 
-    match fs_extra::copy_items(&from, to, &copy_options) {
+    // Append a trailing / if not present in to
+    let to = append_trailing_slash_if_not_present(to);
+
+    match fs_extra::copy_items(&from, to.clone(), &copy_options) {
         Err(err) => {
-            eprintln!("Error copying dir {} to dir {}", from[0], to);
+            eprintln!("Error copying dir {} to dir {}", from[0], to.clone());
             eprintln!("Error code was {}", err);
             exit(-1);
         }
@@ -36,23 +41,32 @@ pub fn copy_dir_recursively(from: &str, to: &str) {
     };
 }
 
-// TODO -- BUG -- if we specify path X/Y/Z contents get copied in path X/Y/
+fn append_trailing_slash_if_not_present(to: &str) -> String{
+    let mut new_to = to.to_string();
+
+    let last_char = *to.as_bytes().last().unwrap() as char;
+
+    if last_char as char != '/'{
+        new_to.push('/');
+    }
+
+    return new_to;
+}
+
 /// Syncs two dirs.
 /// If the destionation dir does not exists, it gets created
 /// Sync means files and dirs not present in from path are deleted in to path if they are present
 /// there
 pub fn sync_dir(from: &str, to: &str) {
-    // We need the parent dir of destination dir
-    let to_parent_dir = parent_dir(to);
 
     // In order to have sync behaviour, delete all the contents of the destination dir
-    remove_dir_and_contents(to_parent_dir);
+    remove_dir_and_contents(to);
 
     // Create the destination dir if does not exist (it should always not exists)
-    create_dir_if_not_exists(to_parent_dir);
+    create_dir_if_not_exists(to);
 
     // Copy contents recursively
-    copy_dir_recursively(from, to_parent_dir);
+    copy_dir_recursively(from, to);
 }
 
 /// Gets the str path of the parent dir
