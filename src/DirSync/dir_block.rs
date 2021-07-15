@@ -8,14 +8,16 @@ pub struct DirBlock {
     repo_path: String,
     system_path: String,
     sync_type: DirFileType,
+    ignore_files: Vec<String>,
 }
 
 impl DirBlock {
-    pub fn new(repo_path: String, system_path: String, sync_type: DirFileType) -> Self {
+    pub fn new(repo_path: String, system_path: String, sync_type: DirFileType, ignore_files: Vec<String>) -> Self {
         return DirBlock {
             repo_path,
             system_path,
             sync_type,
+            ignore_files,
         };
     }
 
@@ -29,6 +31,10 @@ impl DirBlock {
 
     pub fn sync_type(&self) -> &DirFileType{
         return &self.sync_type;
+    }
+
+    pub fn ignore_files(&self) -> Vec<String> {
+        return self.ignore_files.clone();
     }
 }
 

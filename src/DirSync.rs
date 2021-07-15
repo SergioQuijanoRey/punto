@@ -1,4 +1,6 @@
 use std::process::exit;
+use yaml_rust::Yaml;
+
 use crate::DirSync::dir_file_type::DirFileType;
 use crate::YamlProcessor;
 
@@ -70,10 +72,18 @@ pub fn parse_yaml_directories(file_path: &str) -> DirectoriesDescr {
             let repo_path = value["repo_path"].as_str().unwrap();
             let system_path = value["system_path"].as_str().unwrap();
 
+            let empty_vec : Vec<Yaml> = Vec::new();
+            let ignore_files = value["ignore_files"].
+                as_vec().
+                unwrap_or(&empty_vec).
+                into_iter().
+                map(|item| item.as_str().unwrap().to_string()).collect();
+
             dir_descr.push(DirBlock::new(
                 repo_path.to_string(),
                 system_path.to_string(),
                 sync_type,
+                ignore_files,
             ));
         }
     }
