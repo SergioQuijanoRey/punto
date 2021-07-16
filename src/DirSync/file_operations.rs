@@ -1,6 +1,6 @@
 /// Module to implement file operations such as copy files, copy dirs, create dirs, ...
 
-use std::{fs, path::Path, process::exit};
+use std::{fs, path::Path, process::exit, thread, time};
 
 /// Creates recursively a dir if does not exist
 // TODO -- not sure if it is creating dir recursively if depth is greater than 2
@@ -19,54 +19,51 @@ pub fn create_dir_if_not_exists(path: &str) {
 }
 
 /// Copies one dir to other recursively
-pub fn copy_dir_recursively(from: &str, to: &str) {
+// TODO -- BUG -- ignore_files behaviour is not correct
+//      -- We are deleting ignore_files instead of actually ignoring them;
+pub fn copy_dir_recursively(from: &str, to: &str, ignore_files: &Vec<String>) {
+    // Options that we need to pass to copy_dir_advanced
+    let overwrite_all = true;
+    let overwrite_if_newer = true;
+    let overwrite_if_size_differs = true;
+    let include_filters : Vec<String> = Vec::new();
 
-    // copy_items expects a vector of files and dirs to copy from
-    let from = vec![from];
+    let copy_result = dircpy::copy_dir_advanced(
+        from,
+        to,
+        overwrite_all,
+        overwrite_if_newer,
+        overwrite_if_size_differs,
+        ignore_files.to_vec(),
+        include_filters
+    );
 
-    // Options to the copy operation
-    let mut copy_options = fs_extra::dir::CopyOptions::new();
-    copy_options.overwrite = true;
-
-    // Append a trailing / if not present in to
-    let to = append_trailing_slash_if_not_present(to);
-
-    match fs_extra::copy_items(&from, to.clone(), &copy_options) {
+    match copy_result{
+        Ok(()) => (),
         Err(err) => {
-            eprintln!("Error copying dir {} to dir {}", from[0], to.clone());
-            eprintln!("Error code was {}", err);
-            exit(-1);
+            eprintln!("Error copying dir {} to {}", from, to);
+            eprintln!("Err Code: {}", err);
         }
-        Ok(_) => (),
-    };
-}
-
-fn append_trailing_slash_if_not_present(to: &str) -> String{
-    let mut new_to = to.to_string();
-
-    let last_char = *to.as_bytes().last().unwrap() as char;
-
-    if last_char as char != '/'{
-        new_to.push('/');
     }
-
-    return new_to;
 }
 
 /// Syncs two dirs.
 /// If the destionation dir does not exists, it gets created
 /// Sync means files and dirs not present in from path are deleted in to path if they are present
 /// there
-pub fn sync_dir(from: &str, to: &str) {
+// TODO -- BUG -- ignore_files behaviour is not correct
+//      -- As we are removing the destination dir, we are not ignoring the files, we are deleting
+//         them
+pub fn sync_dir(from: &str, to: &str, ignore_files: &Vec<String>) {
 
-    // In order to have sync behaviour, delete all the contents of the destination dir
-    remove_dir_and_contents(to);
+    // // In order to have sync behaviour, delete all the contents of the destination dir
+    // remove_dir_and_contents(to);
 
-    // Create the destination dir if does not exist (it should always not exists)
-    create_dir_if_not_exists(to);
+    // // Create the destination dir if does not exist (it should always not exists)
+    // create_dir_if_not_exists(to);
 
     // Copy contents recursively
-    copy_dir_recursively(from, to);
+    copy_dir_recursively(from, to, ignore_files);
 }
 
 /// Gets the str path of the parent dir
@@ -120,4 +117,10 @@ fn remove_dir_and_contents(dir_path: &str){
 /// Checks if a given dir exists
 fn dir_exists(dir_path: &str) -> bool{
     return Path::new(dir_path).is_dir();
+}
+
+/// Joins two paths given in strings
+// TODO -- TEST -- Test if presence or absence of trailing / in first generates problems
+pub fn join_two_paths(first: &str, second: &str) -> String{
+    return std::path::Path::new(first).join(second).to_str().unwrap().to_string()
 }

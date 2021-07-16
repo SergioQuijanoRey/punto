@@ -55,9 +55,11 @@ impl DirectoriesDescr {
             let to = &dir_block.system_path();
             println!("==> Downloading {} to {}", from, to);
 
+            let ignore_files = &dir_block.ignore_files();
+
             match &dir_block.sync_type() {
                 DirFileType::File => sync_file(from, to),
-                DirFileType::Dir => sync_dir(from, to),
+                DirFileType::Dir => sync_dir(from, to, ignore_files),
             }
         }
     }
@@ -68,16 +70,16 @@ impl DirectoriesDescr {
         for dir_block in &self.dir_blocks {
 
             // In order to manage trailing / in paths
-            // TODO -- TEST -- Test if presence or absence of trailing / generates problems
-            let to = std::path::Path::new(&self.repo_base).join(&dir_block.repo_path());
-            let to = to.to_str().unwrap();
+            let to = &super::file_operations::join_two_paths(&self.repo_base, &dir_block.repo_path());
 
             let from = &dir_block.system_path();
             println!("==> Uploading {} to {}", from, to);
 
+            let ignore_files = &dir_block.ignore_files();
+
             match &dir_block.sync_type() {
                 DirFileType::File => sync_file(from, to),
-                DirFileType::Dir => sync_dir(from, to),
+                DirFileType::Dir => sync_dir(from, to, ignore_files),
             }
         }
     }

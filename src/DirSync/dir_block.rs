@@ -8,6 +8,9 @@ pub struct DirBlock {
     repo_path: String,
     system_path: String,
     sync_type: DirFileType,
+
+    /// Files to ignore
+    /// TODO -- BUG -- now we are deleting them, not ignoring them
     ignore_files: Vec<String>,
 }
 
