@@ -56,11 +56,11 @@ pub fn copy_dir_recursively(from: &str, to: &str, ignore_files: &Vec<String>) {
 //         them
 pub fn sync_dir(from: &str, to: &str, ignore_files: &Vec<String>) {
 
-    // // In order to have sync behaviour, delete all the contents of the destination dir
-    // remove_dir_and_contents(to);
+    // In order to have sync behaviour, delete all the contents of the destination dir
+    remove_dir_and_contents(to);
 
-    // // Create the destination dir if does not exist (it should always not exists)
-    // create_dir_if_not_exists(to);
+    // Create the destination dir if does not exist (it should always not exists)
+    create_dir_if_not_exists(to);
 
     // Copy contents recursively
     copy_dir_recursively(from, to, ignore_files);
