@@ -120,7 +120,35 @@ fn dir_exists(dir_path: &str) -> bool{
 }
 
 /// Joins two paths given in strings
-// TODO -- TEST -- Test if presence or absence of trailing / in first generates problems
 pub fn join_two_paths(first: &str, second: &str) -> String{
     return std::path::Path::new(first).join(second).to_str().unwrap().to_string()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::join_two_paths;
+
+    #[test]
+    fn test_join_two_paths_basic() {
+
+        let computed = join_two_paths("testing", "this");
+        let expected = "testing/this";
+        assert_eq!(expected, computed);
+    }
+
+    #[test]
+    fn test_join_two_paths_trailing_slashes(){
+
+        let computed = join_two_paths("testing/", "this");
+        let expected = "testing/this";
+        assert_eq!(expected, computed);
+
+        let computed = join_two_paths("testing", "this/");
+        let expected = "testing/this/";
+        assert_eq!(expected, computed);
+
+        let computed = join_two_paths("testing/", "this/");
+        let expected = "testing/this/";
+        assert_eq!(expected, computed);
+    }
 }
