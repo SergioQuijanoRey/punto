@@ -53,6 +53,10 @@ pub fn parse_yaml_directories(file_path: &str) -> DirectoriesDescr {
             .as_str()
             .expect("repo_base: <path> is not specified well")
             .to_string(),
+        parsed_contents["system_base"]
+            .as_str()
+            .expect("system_base: <path> is not specified well")
+            .to_string(),
         vec![],
     );
 

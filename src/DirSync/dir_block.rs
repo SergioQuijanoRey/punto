@@ -5,8 +5,13 @@ use crate::DirSync::dir_file_type::DirFileType;
 /// sync to be performed
 #[derive(Debug)]
 pub struct DirBlock {
+    /// Path relative to DirDescr::repo_base
     repo_path: String,
+
+    /// Path relative to DirDescr::system_base
     system_path: String,
+
+    /// Type of sync mechanism
     sync_type: DirFileType,
 
     /// Files to ignore
