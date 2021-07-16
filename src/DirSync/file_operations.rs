@@ -120,6 +120,13 @@ fn dir_exists(dir_path: &str) -> bool{
 }
 
 /// Joins two paths given in strings
+///
+/// # Examples
+/// ```
+/// let joined = join_two_paths("first_part", "second_part");
+/// let expected = "first_part/second_part";
+/// assert_eq!(expected, joined);
+/// ```
 pub fn join_two_paths(first: &str, second: &str) -> String{
     return std::path::Path::new(first).join(second).to_str().unwrap().to_string()
 }
