@@ -1,3 +1,5 @@
+// TODO -- split in different modules, file too large
+
 use crate::YamlProcessor;
 use std::collections::HashMap;
 use std::env;
@@ -80,6 +82,7 @@ impl CommandBlock {
 }
 
 /// Types of error or launching a Command
+#[derive(Debug, PartialEq)]
 enum CommandErrorType{
     /// The command was not able to run at first place
     NotStarted,
@@ -183,4 +186,29 @@ fn parse_yaml_command(file_path: &str) -> Vec<CommandBlock> {
     println!("{:?}", commands);
     println!("Exiting the function");
     return commands;
+}
+
+/// Tests related to failing commands management
+#[cfg(test)]
+mod command_failures_test {
+    use super::CommandBlock;
+    use super::CommandError;
+    use super::CommandErrorType;
+
+    #[test]
+    pub fn command_execution_fails(){
+        let failing_command = CommandBlock::new(
+            "Command that should fail".to_string(),
+            false,
+            vec!["this commnand does not exist".to_string()],
+            false
+        );
+
+        let execution_result = failing_command.execute().expect_err("This command should generate an error").error_type;
+        let execution_expected = CommandErrorType::ExecutionError;
+        assert_eq!(execution_result, execution_expected, "Expected: {:?}, got: {:?}", execution_expected, execution_result);
+
+
+    }
+
 }
