@@ -5,9 +5,22 @@ use std::process::exit;
 /// Represents a section of a installer .yaml specification
 #[derive(Debug)]
 struct InstallerSection {
+
+    /// Name of the installer section
     name: String,
+
+    /// Command used to install all packages in this section
     install_command: String,
+
+    /// List of packages to install
     packages: Vec<String>,
+}
+
+/// List of packages that failed to install
+/// This packages belong to the same InstallerSection
+struct FailedPackages{
+    section_name: String,
+    failed_packages: Vec<String>,
 }
 
 impl InstallerSection {
@@ -21,7 +34,13 @@ impl InstallerSection {
     }
 
     /// Installs all the packages described in the InstallerSection
-    pub fn install_all_packages(&self) {
+    /// Returns the packages that failed to install in this section or None if no package failed to
+    /// install
+    pub fn install_all_packages(&self) -> Option<FailedPackages>{
+
+        // Packages that failed to install
+        let mut failed_packages = FailedPackages::new(self.name.clone());
+
         for package in &self.packages {
             let command = format!("{} {}", self.install_command, package);
             let command_block = CommandProcessor::CommandBlock::new(
@@ -30,9 +49,57 @@ impl InstallerSection {
                 vec![command],
                 false,
             );
-            command_block.execute();
+
+            match command_block.execute(){
+                Ok(()) => {},
+                Err(err) => {
+                    // TODO -- maybe delete this printing
+                    println!("Could not install {}, reason: {}", package, err);
+                    failed_packages.push(package.to_string());
+                }
+            }
+        }
+
+        // No failed packages generated, return None
+        if failed_packages.is_empty(){
+            return None;
+        }
+
+        return Some(failed_packages);
+    }
+
+}
+
+impl FailedPackages{
+    /// Creates a new FailedPackages instance
+    pub fn new(section_name: String) -> Self{
+        return Self{
+            section_name: section_name,
+            failed_packages: vec![],
+        };
+    }
+
+    /// Displays to the user all packages that failed to install in a section
+    // TODO -- use termion crate for colored output
+    pub fn show_failed_packages(&self) {
+        eprintln!("==> Some packages in section {} failed to install", self.section_name);
+        for package in &self.failed_packages {
+            eprintln!("--> {}", package);
         }
     }
+
+    pub fn len(&self) -> usize{
+        return self.failed_packages.len();
+    }
+
+    pub fn is_empty(&self) -> bool{
+        return self.failed_packages.is_empty();
+    }
+
+    pub fn push(&mut self, failed_package: String){
+        self.failed_packages.push(failed_package);
+    }
+
 }
 
 /// Callback for --install cli arg
@@ -43,37 +110,94 @@ pub fn handle_install_command(yaml_file: &str, section: Option<&str>) {
     match section{
         None => {
             println!("📦 Installing packages -- all sections");
-            install_all_sections(yaml_file);
+            let failed_packages_per_section = install_all_sections(yaml_file);
+
+            match failed_packages_per_section{
+                // Some pacakges failed to install, show them with their section
+                Some(failed_packages_per_section) => {
+                    println!("Some packages failed to install. Showing them per section");
+                    for failed_packages in failed_packages_per_section{
+                        failed_packages.show_failed_packages();
+                        println!("");
+                    }
+                }
+
+                // All went good, do nothing
+                None => (),
+            }
         }
 
         Some(section) => {
             println!("📦 Installing packages -- section {}", section);
-            install_section(yaml_file, &section);
+            let failed_packages = install_section(yaml_file, &section);
+
+            match failed_packages{
+                // Some packages failed to install, show them
+                Some(failed_packages) => {
+                    failed_packages.show_failed_packages();
+                },
+
+                // All went good, do nothing
+                None => (),
+            }
         }
     }
 }
 
 /// Installs all the sections specified in the given yaml file
-fn install_all_sections(yaml_file: &str){
+/// Returns failed packages per section or None if no package failed to install
+fn install_all_sections(yaml_file: &str) -> Option<Vec<FailedPackages>> {
+
+    // Failed packages to install at each installer section
+    let mut failed_packages_per_section = vec![];
+
     let installer_sections = parse_yaml_installer(yaml_file);
     for section in installer_sections {
-        println!("Installing {} block", section.name);
+        println!("Installing {} section", section.name);
         println!(
             "================================================================================"
         );
-        section.install_all_packages();
 
+        // Install all packages
+        let failed_packages = section.install_all_packages();
+
+        // Store failed ones if some failed
+        match failed_packages{
+            // Some package failed, add this FailedPackages to the vector
+            Some(failed_packages) => {
+                failed_packages_per_section.push(failed_packages);
+            },
+
+            // No package failed, do not add to the vector
+            None => ()
+        }
     }
+
+    // Check if no package failed to install
+    if failed_packages_per_section.is_empty(){
+        return None;
+    }
+
+    return Some(failed_packages_per_section);
 }
 
 /// Install given section, and only that section
-fn install_section(yaml_file: &str, section: &str){
+/// Returns failed packages
+/// Returns None if:
+///     - No failed packages were generated
+///     - No section was found with given name
+// TODO -- DESIGN -- two none returns for different situationes, consider using result
+// TODO -- DESIGN -- return Result<Option<FailedPackages>, Err>
+fn install_section(yaml_file: &str, section: &str) -> Option<FailedPackages>{
     let installer_sections = parse_yaml_installer(yaml_file);
     for curr_section in installer_sections {
         if curr_section.name == section{
-            curr_section.install_all_packages();
+            return curr_section.install_all_packages();
         }
     }
+
+    // No section found with this name, no packages installed thus no failed packages generated
+    return None;
 }
 
 /// Given a installer yaml file, returns a vector with its InstallerSection

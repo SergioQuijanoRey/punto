@@ -23,6 +23,7 @@ impl CommandBlock {
     }
 
     /// Executes all commands of the command block
+    // TODO -- BUG -- needs to return Result<(), Err>
     pub fn execute(&self) {
         println!("Launching command {}", self.description);
         println!(
