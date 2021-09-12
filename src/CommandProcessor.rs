@@ -58,7 +58,6 @@ impl CommandBlock {
             .stdin(Stdio::inherit())
             .arg("-c")
             .arg(command)
-            .arg("-Syyu") // TODO -- why this
             .spawn();
 
         let mut command_handle = match command_handle{
