@@ -27,7 +27,6 @@ impl CommandBlock {
     }
 
     /// Executes all commands of the command block
-    // TODO -- BUG -- needs to return Result<(), Err>
     pub fn execute(&self) -> Result<(), CommandError>{
         println!("Launching command {}", self.description);
         println!(
@@ -52,42 +51,60 @@ impl CommandBlock {
     /// Returns the result of executing the command
     fn run_shell_command(command: &str) -> Result<(), CommandError>{
         let user_env_vars: HashMap<String, String> = env::vars().collect();
-        let command_handle = Command::new("bash")
+
+        // Launch the command
+        // TODO -- BUG -- because we're passing bash as command, never fails
+        // TODO -- BUG -- pass directly the command
+        let status = Command::new("bash")
             .env_clear()
             .envs(user_env_vars)
             .stdin(Stdio::inherit())
             .arg("-c")
-            .arg(command)
-            .spawn();
+            .arg("command")
+            .status();
 
-        let mut command_handle = match command_handle{
-            Ok(command_handle) => command_handle,
+        // Check for status of the command
+        match status{
+            Ok(exit_status) => {
+
+                // Check if status code was ok
+                if exit_status.success() == true {
+                    return Ok(());
+                }
+
+                // Status code is not ok, return error
+                match exit_status.code() {
+
+                    // Execution ended not because user terminated it
+                    Some(value) => return Err(CommandError::new_execution_error(value)),
+
+                    // Exectution ended because user terminated it
+                    None => {
+                        return Err(CommandError::new_user_termination());
+                    }
+                };
+            },
+
+            // Some weird error happened
+            // TODO -- not sure at all about this
             Err(err) => {
                 return Err(CommandError::new_not_started(err));
-            }
+            },
         };
-
-        // Wait for the command
-        match command_handle.wait(){
-            // We are not interested in the result of the execution, just that if has finished
-            Ok(_) => return Ok(()),
-
-            // An error has ocurred while executing the command
-            Err(err) => {
-                return Err(CommandError::new_exection_error(err));
-            }
-        }
     }
 }
 
 /// Types of error or launching a Command
 #[derive(Debug, PartialEq)]
 enum CommandErrorType{
-    /// The command was not able to run at first place
-    NotStarted,
+    /// The command failed in a really weird way (not abling to spawn, not having perms...)
+    ExtremeFailure,
 
-    /// The command was able to start, but had some failure during execution
+    /// The command was able to start, but had some failure during execution show in the exit code
     ExecutionError,
+
+    /// The command failed because the user terminated it
+    UserTermination,
 }
 
 /// Represents an error ocurred during command execution
@@ -100,16 +117,25 @@ impl CommandError{
     /// The command could not start its execution
     pub fn new_not_started(error: std::io::Error) -> Self{
         return Self{
-            error_type: CommandErrorType::NotStarted,
+            error_type: CommandErrorType::ExtremeFailure,
             description: error.to_string(),
         };
     }
 
     /// The command started properly, but had a problem during its execution
-    pub fn new_exection_error(error: std::io::Error) -> Self{
+    /// This is shown at the exit code
+    pub fn new_execution_error(exit_code: i32) -> Self{
         return Self{
             error_type: CommandErrorType::ExecutionError,
-            description: error.to_string(),
+            description: format!("Ended badly with exit code {}", exit_code),
+        };
+    }
+
+    /// The command failed because user terminated it
+    pub fn new_user_termination() -> Self{
+        return Self{
+            description: "User terminated the execution".to_string(),
+            error_type: CommandErrorType::UserTermination,
         };
     }
 }
@@ -117,18 +143,23 @@ impl CommandError{
 impl fmt::Display for CommandError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self.error_type{
-            CommandErrorType::NotStarted => {
-                let first_line = "[Error] Command could not start";
+            CommandErrorType::ExtremeFailure => {
+                let first_line = "[Error] Command failed in an extreme way";
                 let second_line = format!("\tDescription: {}", self.description);
                 let msg = format!("{}\n{}", first_line, second_line);
                 return write!(f, "{}", msg);
             }
 
             CommandErrorType::ExecutionError => {
-                let first_line = "[Error] Command started but failed during execution";
+                let first_line = format!("[Error] {}", self.description);
                 let second_line = format!("\tDescription: {}", self.description);
                 let msg = format!("{}\n{}", first_line, second_line);
                 return write!(f, "{}", msg);
+            }
+
+            CommandErrorType::UserTermination => {
+                return write!(f, "User ended execution");
+
             }
         }
     }
@@ -138,6 +169,7 @@ impl fmt::Display for CommandError {
 
 /// Handler to --shell cli argument
 /// Reads the shell yaml config file and executes commands described in the yaml file
+// TODO -- handle exceptions
 pub fn handle_shell_command(yaml_file: &str) {
     println!("Running shell commands defined in shell.yaml");
     println!("================================================================================");
