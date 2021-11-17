@@ -55,12 +55,11 @@ impl CommandBlock {
         // Launch the command
         // TODO -- BUG -- because we're passing bash as command, never fails
         // TODO -- BUG -- pass directly the command
-        let status = Command::new("bash")
+        // TODO -- try with this stackoverflow post: https://stackoverflow.com/questions/21011330/how-do-i-invoke-a-system-command-and-capture-its-output
+        let status = Command::new(command)
             .env_clear()
             .envs(user_env_vars)
             .stdin(Stdio::inherit())
-            .arg("-c")
-            .arg("command")
             .status();
 
         // Check for status of the command
@@ -229,13 +228,15 @@ mod command_failures_test {
     #[test]
     pub fn command_execution_fails(){
         let failing_command = CommandBlock::new(
-            "Command that should fail".to_string(),
+            "bash -c this does not exist".to_string(),
             false,
             vec!["this commnand does not exist".to_string()],
             false
         );
 
-        let execution_result = failing_command.execute().expect_err("This command should generate an error").error_type;
+        let execution_result = failing_command.execute().expect_err("This command should generate an error");
+        println!("Error is {}", execution_result);
+        let execution_result = execution_result.error_type;
         let execution_expected = CommandErrorType::ExecutionError;
         assert_eq!(execution_result, execution_expected, "Expected: {:?}, got: {:?}", execution_expected, execution_result);
 
