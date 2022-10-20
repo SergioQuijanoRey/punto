@@ -88,6 +88,11 @@ impl SingleCommand{
         // Get all the parts of the command
         let mut string_parts: Vec<&str> = self.command.split(" ").collect();
 
+        // Use sudo if specified
+        if self.sudo == true{
+            string_parts.insert(0, "sudo");
+        }
+
         // Construct the builder `Command`
         let mut builder = Command::new(string_parts[0]);
         for (index, arg) in string_parts.iter().enumerate(){
@@ -175,12 +180,25 @@ mod single_command_test{
     pub fn test_sudo_in_command_fails() -> Result<(), String>{
         // Build and run a failing command
         let command_result = SingleCommand::new(
-            "sudo ls -lah /dev/thisdirdoesnotexist".to_string(), false, true
+            "sudo ls -lah /dev/thisdirdoesnotexist".to_string(), false, false
         );
 
         match command_result{
             Ok(_) => return Err("Command has sudo in the string command and thus should not build".to_string()),
             Err(_) => return Ok(()),
         }
+    }
+
+    #[test]
+    pub fn test_sudo_command_can_run() -> Result<(), SingleCommandError>{
+        // Run a command with sudo
+        let command = SingleCommand::new(
+            "ls /etc/".to_string(), false, true
+        )?;
+        command.run()?;
+
+        // Everything went ok
+        return Ok(());
+
     }
 }
