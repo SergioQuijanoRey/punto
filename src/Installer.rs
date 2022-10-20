@@ -1,4 +1,5 @@
 use crate::CommandProcessor;
+use crate::SingleCommand;
 use crate::YamlProcessor;
 use std::process::exit;
 
@@ -42,19 +43,16 @@ impl InstallerSection {
         let mut failed_packages = FailedPackages::new(self.name.clone());
 
         for package in &self.packages {
-            let command = format!("{} {}", self.install_command, package);
-            let command_block = CommandProcessor::CommandBlock::new(
-                format!("Install package {}", package),
-                false,
-                vec![command],
-                false,
-            );
+            let quiet = false;
+            let sudo = true;
 
-            match command_block.execute(){
+            let command_string = format!("{} {}", self.install_command, package);
+            let command = SingleCommand::SingleCommand::new(command_string, quiet, sudo).expect("Install command failed to build");
+
+            // Run the command. If it fails, add to the list of failed commands
+            match command.run(){
                 Ok(()) => {},
-                Err(err) => {
-                    // TODO -- maybe delete this printing
-                    println!("Could not install {}, reason: {}", package, err);
+                Err(_) => {
                     failed_packages.push(package.to_string());
                 }
             }
@@ -67,7 +65,6 @@ impl InstallerSection {
 
         return Some(failed_packages);
     }
-
 }
 
 impl FailedPackages{
