@@ -1,6 +1,4 @@
-use std::collections::HashMap;
 use std::process::{Command, Stdio};
-use std::env;
 
 /// Represents a shell command to execute
 #[derive(Debug)]
