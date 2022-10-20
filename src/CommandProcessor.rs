@@ -3,7 +3,7 @@
 use crate::YamlProcessor;
 use std::collections::HashMap;
 use std::env;
-use crate::SingleCommand::SingleCommand;
+use crate::SingleCommand::{SingleCommand, SingleCommandError};
 
 /// Represent a group of commands to execute in sequence
 /// If one command fails, the rest of the commands won't be executed
@@ -29,7 +29,7 @@ impl CommandBlock {
     }
 
     /// Executes all commands of the command block
-    pub fn execute(&self) -> Result<(), String>{
+    pub fn execute(&self) -> Result<(), SingleCommandError>{
         println!("Launching command block {}", self.description);
         println!(
             "================================================================================"

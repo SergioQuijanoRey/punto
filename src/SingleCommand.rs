@@ -14,29 +14,49 @@ pub struct SingleCommand{
     sudo: bool,
 }
 
+/// Enum to represent all kind of errors that could happen
+#[derive(Debug)]
+pub enum SingleCommandError{
+
+    /// Error that is returned when the command string has sudo
+    /// If sudo is wanted to be used, it has to be set in the sudo bool field
+    SudoAtTheStart,
+
+    /// Error that is returned when the program does not exist. Thus, this error
+    /// raises when we try to create a command with this unexisting program
+    ProgramDoesNotExist(String),
+
+    /// Error that is returned when the program fails in runtime
+    /// That is to say, when the program runs but in the middle of execution fails
+    RuntimeFailure(String),
+}
+
 impl SingleCommand{
-    pub fn new(command: String, quiet: bool, sudo: bool) -> Result<Self, String>{
+    pub fn new(command: String, quiet: bool, sudo: bool) -> Result<Self, SingleCommandError>{
 
         // Remove useless whitespaces, so we can check if sudo is inside the command
         let command = command.trim().to_string();
 
         // Check if command string has sudo
         if command.starts_with("sudo"){
-            return Err("Given command string has sudo, that has to be specified with a boolean".to_string());
+            return Err(SingleCommandError::SudoAtTheStart);
         }
 
         return Ok(Self{command, quiet, sudo});
     }
 
     /// Runs the command
-    pub fn run(&self) -> Result<(), String>{
+    pub fn run(&self) -> Result<(), SingleCommandError>{
 
         // Get the builder of the command
         let mut builder = self.get_builder_command();
 
         // Spawn the command and get the handler
         let handler = match builder.spawn(){
-            Err(err) => return Err("Command failed to execute".to_string()),
+
+            // If this fails when creating the handle, it's because the program does not exist
+            Err(err) => return Err(SingleCommandError::ProgramDoesNotExist(format!("{:?}", err))),
+
             Ok(child) => child,
         };
 
@@ -63,20 +83,23 @@ impl SingleCommand{
 /// Tests associated with the run of a single command
 #[cfg(test)]
 mod single_command_test{
-    use super::SingleCommand;
+    use super::{SingleCommand, SingleCommandError};
 
     #[test]
-    pub fn test_failing_command() -> Result<(), String>{
+    pub fn test_failing_command_with_unexisting_program() -> Result<(), String>{
+
         // Build and run a failing command
         let command = SingleCommand::new(
             "This command does not exist".to_string(), false, false
-        )?;
+        ).expect("This command doesn't have sudo at the start");
         let result = command.run();
 
-        // Check that the command failed to run
-        match result{
+        // Check that the command failed to run because the program does not exist
+        match result {
             Ok(value) => return Err(format!("Expected error, obtained {:?}", value)),
-            Err(_) => return Ok(()),
+            Err(SingleCommandError::SudoAtTheStart) => return Err("This command should faild because the program doesn't exist, not because it has sudo at the start".to_string()),
+            Err(SingleCommandError::RuntimeFailure(_)) => return Err("This command should faild because the program doesn't exist, not because it has some runtime failure".to_string()),
+            Err(SingleCommandError::ProgramDoesNotExist(_)) => return Ok(()),
         }
     }
 
@@ -85,7 +108,7 @@ mod single_command_test{
         // Build and run a failing command
         let command = SingleCommand::new(
             "ls -la".to_string(), false, false
-        )?;
+        ).expect("This command doesn't have sudo at the start");
 
         let result = command.run();
 
@@ -101,14 +124,17 @@ mod single_command_test{
         // Build and run a failing command
         let command = SingleCommand::new(
             "pacman -S thispackagedoesnotexist".to_string(), false, true
-        )?;
+        ).expect("This command doesn't have sudo at the start");
 
         let result = command.run();
 
         // Check that the install command failed to execute
+        // And that the failure is because something with the execution failed
         match result{
             Ok(_) => return Err(format!("Installation of thispackagedoesnotexist run succesfully")),
-            Err(_) => return Ok(()),
+            Err(SingleCommandError::SudoAtTheStart) => return Err("This command should fail in runtime, not because it has sudo".to_string()),
+            Err(SingleCommandError::ProgramDoesNotExist(_)) => return Err("This command should fail in runtime, not because the program does not exist".to_string()),
+            Err(SingleCommandError::RuntimeFailure(_)) => return Ok(()),
         }
     }
 }
