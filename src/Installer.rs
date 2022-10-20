@@ -75,7 +75,7 @@ mod test_installer_section{
         let sudo = true;
         let section = InstallerSection::new(
             "Install some packages".to_string(),
-            "pacman -S".to_string(),
+            "pacman -S --noconfirm".to_string(),
             vec!["git".to_string(), "thispackagedoesnotexist".to_string(), "exa".to_string()],
             sudo,
         );
