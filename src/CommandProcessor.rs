@@ -242,6 +242,21 @@ mod single_command_test{
         }
     }
 
+    #[test]
+    pub fn test_install_unexisting_package_fails() -> Result<(), String>{
+        // Build and run a failing command
+        let command = SingleCommand::new(
+            "pacman -S thispackagedoesnotexist".to_string(), false, true
+        )?;
+
+        let result = command.run();
+
+        // Check that the install command failed to execute
+        match result{
+            Ok(_) => return Err(format!("Installation of thispackagedoesnotexist run succesfully")),
+            Err(_) => return Ok(()),
+        }
+    }
 }
 
 // Tests related to failing commands management
