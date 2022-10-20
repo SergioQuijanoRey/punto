@@ -54,7 +54,7 @@ impl SingleCommand{
         let mut builder = self.get_builder_command();
 
         // Spawn the command and get the handler
-        let handler = match builder.spawn(){
+        let mut handler = match builder.spawn(){
 
             // If this fails when creating the handle, it's because the program does not exist
             Err(err) => return Err(SingleCommandError::ProgramDoesNotExist(format!("{:?}", err))),
@@ -62,17 +62,23 @@ impl SingleCommand{
             Ok(child) => child,
         };
 
-        // Wait the command to run and capture the output
-        let output = match handler.wait_with_output(){
+        // Wait the command to run and capture the exit code
+        let exit_code = match handler.wait(){
             Err(err) => return Err(SingleCommandError::RuntimeFailure(format!("{:?}", err))),
-            Ok(value) => value,
+            Ok(exit_code) => exit_code,
         };
 
-        // Check if there was an error in the execution
-        if output.stderr.len() > 0 {
-            return Err(SingleCommandError::RuntimeFailure(format!("{:?}", output.stderr)));
+        // Check that exit code
+        let code = match exit_code.code(){
+            None => return Err(SingleCommandError::RuntimeFailure("Process terminated by signal".to_string())),
+            Some(code) => code,
+        };
+
+        if code != 0{
+            return Err(SingleCommandError::RuntimeFailure(format!("Exit code was not zero, was {}", code)));
         }
 
+        // Everything went ok
         return Ok(());
     }
 
