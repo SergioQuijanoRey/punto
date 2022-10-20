@@ -253,6 +253,7 @@ fn parse_yaml_installer(file_path: &str) -> Vec<InstallerSection> {
     for (key, value) in parsed_contents.as_hash().unwrap() {
         let name = key.as_str().unwrap().to_string();
         let install_command = value["install_command"].as_str().expect("Install command cannot be retreived").to_string();
+        let sudo = value["sudo"].as_bool().expect("Install command does not have sudo");
 
         let empty_packages_vec = vec![];
         let packages = value["packages"].as_vec().unwrap_or(&empty_packages_vec);
@@ -260,7 +261,6 @@ fn parse_yaml_installer(file_path: &str) -> Vec<InstallerSection> {
             .into_iter()
             .map(|package| package.as_str().unwrap().to_string())
             .collect();
-        let sudo = value["sudo"].as_bool().expect("Install command does not have sudo");
         installer_blocks.push(InstallerSection {
             name,
             install_command,
