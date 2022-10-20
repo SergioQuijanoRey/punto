@@ -5,166 +5,152 @@ use std::collections::HashMap;
 use std::env;
 use std::process::{Command, Stdio, exit};
 use std::fmt;
-use std::io::Error;
 
+/// Represent a group of commands to execute in sequence
+/// If one command fails, the rest of the commands won't be executed
+// TODO -- Add the option to keep executing commands even though one fails
 #[derive(Debug)]
 pub struct CommandBlock {
+
+    /// The sequence of commands
+    commands: Vec<SingleCommand>,
+
+    /// To describe what is the purpose of this block of commands
     description: String,
-    quiet: bool,
-    commands: Vec<String>,
-    sudo: bool,
+
 }
 
 impl CommandBlock {
     /// Creates a new CommandBlock
-    pub fn new(description: String, quiet: bool, commands: Vec<String>, sudo: bool) -> Self {
+    pub fn new(commands: Vec<SingleCommand>, description: String) -> Self {
         return CommandBlock {
-            description,
-            quiet,
             commands,
-            sudo,
+            description,
         };
     }
 
     /// Executes all commands of the command block
-    pub fn execute(&self) -> Result<(), CommandError>{
-        println!("Launching command {}", self.description);
+    pub fn execute(&self) -> Result<(), String>{
+        println!("Launching command block {}", self.description);
         println!(
             "================================================================================"
         );
 
         for command in &self.commands {
-
-            // Execute this command and check for errors
-            match CommandBlock::run_shell_command(&command){
-                Err(err) => return Err(err),
-                Ok(()) => (),
-            }
+            // Run the command. Return the error if we find one
+            let result = command.run()?;
         }
 
         // All commands executed well
         return Ok(());
     }
 
-    /// Runs a given shell command in interactive mode
-    /// It should never be called directly, thus is private
-    /// Returns the result of executing the command
-    fn run_shell_command(command: &str) -> Result<(), CommandError>{
-        let user_env_vars: HashMap<String, String> = env::vars().collect();
+    // /// Runs a given shell command in interactive mode
+    // /// It should never be called directly, thus is private
+    // /// Returns the result of executing the command
+    // // TODO -- remove deprecated function
+    // fn run_shell_command(command: &str) -> Result<(), CommandError>{
+    //     let user_env_vars: HashMap<String, String> = env::vars().collect();
 
-        // Launch the command
-        // TODO -- BUG -- because we're passing bash as command, never fails
-        // TODO -- BUG -- pass directly the command
-        // TODO -- try with this stackoverflow post: https://stackoverflow.com/questions/21011330/how-do-i-invoke-a-system-command-and-capture-its-output
-        let status = Command::new(command)
-            .env_clear()
-            .envs(user_env_vars)
-            .stdin(Stdio::inherit())
-            .status();
+    //     // Launch the command
+    //     // TODO -- BUG -- because we're passing bash as command, never fails
+    //     // TODO -- BUG -- pass directly the command
+    //     // TODO -- try with this stackoverflow post: https://stackoverflow.com/questions/21011330/how-do-i-invoke-a-system-command-and-capture-its-output
+    //     let status = Command::new(command)
+    //         .env_clear()
+    //         .envs(user_env_vars)
+    //         .stdin(Stdio::inherit())
+    //         .status();
 
-        // Check for status of the command
-        match status{
-            Ok(exit_status) => {
+    //     // Check for status of the command
+    //     match status{
+    //         Ok(exit_status) => {
 
-                // Check if status code was ok
-                if exit_status.success() == true {
-                    return Ok(());
-                }
+    //             // Check if status code was ok
+    //             if exit_status.success() == true {
+    //                 return Ok(());
+    //             }
 
-                // Status code is not ok, return error
-                match exit_status.code() {
+    //             // Status code is not ok, return error
+    //             match exit_status.code() {
 
-                    // Execution ended not because user terminated it
-                    Some(value) => return Err(CommandError::new_execution_error(value)),
+    //                 // Execution ended not because user terminated it
+    //                 Some(value) => return Err(CommandError::new_execution_error(value)),
 
-                    // Exectution ended because user terminated it
-                    None => {
-                        return Err(CommandError::new_user_termination());
-                    }
-                };
-            },
+    //                 // Exectution ended because user terminated it
+    //                 None => {
+    //                     return Err(CommandError::new_user_termination());
+    //                 }
+    //             };
+    //         },
 
-            // Some weird error happened
-            // TODO -- not sure at all about this
-            Err(err) => {
-                return Err(CommandError::new_not_started(err));
-            },
-        };
-    }
+    //         // Some weird error happened
+    //         // TODO -- not sure at all about this
+    //         Err(err) => {
+    //             return Err(CommandError::new_not_started(err));
+    //         },
+    //     };
+    // }
 }
 
-/// Types of error or launching a Command
-#[derive(Debug, PartialEq)]
-enum CommandErrorType{
-    /// The command failed in a really weird way (not abling to spawn, not having perms...)
-    ExtremeFailure,
+/// Represents a shell command to execute
+#[derive(Debug)]
+pub struct SingleCommand{
 
-    /// The command was able to start, but had some failure during execution show in the exit code
-    ExecutionError,
+    /// Wether or not output the result of the command
+    quiet: bool,
 
-    /// The command failed because the user terminated it
-    UserTermination,
+    /// The comand itself
+    command: String,
+
+    /// If we need to use sudo for executing this command
+    sudo: bool,
 }
 
-/// Represents an error ocurred during command execution
-pub struct CommandError{
-    error_type: CommandErrorType,
-    description: String,
-}
+impl SingleCommand{
+    pub fn new(command: String, quiet: bool, sudo: bool) -> Result<Self, String>{
 
-impl CommandError{
-    /// The command could not start its execution
-    pub fn new_not_started(error: std::io::Error) -> Self{
-        return Self{
-            error_type: CommandErrorType::ExtremeFailure,
-            description: error.to_string(),
-        };
-    }
+        // Remove useless whitespaces, so we can check if sudo is inside the command
+        let command = command.trim().to_string();
 
-    /// The command started properly, but had a problem during its execution
-    /// This is shown at the exit code
-    pub fn new_execution_error(exit_code: i32) -> Self{
-        return Self{
-            error_type: CommandErrorType::ExecutionError,
-            description: format!("Ended badly with exit code {}", exit_code),
-        };
-    }
-
-    /// The command failed because user terminated it
-    pub fn new_user_termination() -> Self{
-        return Self{
-            description: "User terminated the execution".to_string(),
-            error_type: CommandErrorType::UserTermination,
-        };
-    }
-}
-
-impl fmt::Display for CommandError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self.error_type{
-            CommandErrorType::ExtremeFailure => {
-                let first_line = "[Error] Command failed in an extreme way";
-                let second_line = format!("\tDescription: {}", self.description);
-                let msg = format!("{}\n{}", first_line, second_line);
-                return write!(f, "{}", msg);
-            }
-
-            CommandErrorType::ExecutionError => {
-                let first_line = format!("[Error] {}", self.description);
-                let second_line = format!("\tDescription: {}", self.description);
-                let msg = format!("{}\n{}", first_line, second_line);
-                return write!(f, "{}", msg);
-            }
-
-            CommandErrorType::UserTermination => {
-                return write!(f, "User ended execution");
-
-            }
+        // Check if command string has sudo
+        if command.starts_with("sudo"){
+            return Err("Given command string has sudo, that has to be specified with a boolean".to_string());
         }
+
+        return Ok(Self{command, quiet, sudo});
+    }
+
+    /// Runs the command
+    pub fn run(&self) -> Result<(), String>{
+
+        // Get the builder of the command
+        let mut builder = self.get_builder_command();
+
+        // Spawn the command and get the handler
+        let handler = match builder.spawn(){
+            Err(err) => return Err("Command failed to execute".to_string()),
+            Ok(child) => child,
+        };
+
+        return Ok(());
+    }
+
+    /// Creates the `Command` struct, that we can use for spawning, getting the output, ...
+    fn get_builder_command(&self) -> Command {
+
+        // Get all the parts of the command
+        let mut string_parts: Vec<&str> = self.command.split(" ").collect();
+
+        // Construct the builder `Command`
+        let mut builder = Command::new(string_parts[0]);
+        for arg in string_parts.iter().skip(0){
+            builder.arg(arg);
+        }
+
+        return builder;
     }
 }
-
-
 
 /// Handler to --shell cli argument
 /// Reads the shell yaml config file and executes commands described in the yaml file
@@ -180,67 +166,110 @@ pub fn handle_shell_command(yaml_file: &str) {
 
 /// Given a yaml file path, it returns the CommandOptions vector which are used to launch a command
 fn parse_yaml_command(file_path: &str) -> Vec<CommandBlock> {
-    let parsed_contents = YamlProcessor::parse_yaml(file_path);
-    // TODO -- this block of code is repeated
-    let parsed_contents = match parsed_contents{
-        Ok(contents) => contents,
-        Err(err) => {
-            eprintln!("Could not parse {}, exiting now", file_path);
-            eprintln!("Error code was {}", err);
-            exit(-1);
-        }
-    };
+    // TODO -- we're returning an empty vector
+    return vec![];
 
-    let mut commands = vec![];
+    // let parsed_contents = YamlProcessor::parse_yaml(file_path);
+    // // TODO -- this block of code is repeated
+    // let parsed_contents = match parsed_contents{
+    //     Ok(contents) => contents,
+    //     Err(err) => {
+    //         eprintln!("Could not parse {}, exiting now", file_path);
+    //         eprintln!("Error code was {}", err);
+    //         exit(-1);
+    //     }
+    // };
 
-    // Getting the commands from the yaml file into struct
-    for (_, value) in parsed_contents.as_hash().unwrap().iter() {
-        // TODO -- panics here
-        let vector_of_commands = value["commands"].as_vec().unwrap();
-        let vector_of_commands: Vec<String> = vector_of_commands
-            .into_iter()
-            .map(|command| command.as_str().unwrap().to_string())
-            .collect();
+    // let mut commands = vec![];
 
-        commands.push(CommandBlock {
-            description: value["description"]
-                .as_str()
-                .unwrap_or("No description provided")
-                .to_string(),
-            quiet: value["quiet"].as_bool().unwrap_or(false),
-            commands: vector_of_commands,
-            sudo: value["sudo"].as_bool().unwrap_or(false),
-        });
-    }
+    // // Getting the commands from the yaml file into struct
+    // for (_, value) in parsed_contents.as_hash().unwrap().iter() {
+    //     // TODO -- panics here
+    //     let vector_of_commands = value["commands"].as_vec().unwrap();
+    //     let vector_of_commands: Vec<String> = vector_of_commands
+    //         .into_iter()
+    //         .map(|command| command.as_str().unwrap().to_string())
+    //         .collect();
 
-    println!("{:?}", commands);
-    println!("Exiting the function");
-    return commands;
+    //     let quiet = value["quiet"].as_bool().unwrap_or(false);
+    //     let sudo = value["sudo"].as_bool().unwrap_or(false);
+    //     let vector_of_commands: Vec<SingleCommand> = vector_of_commands.iter().map(|command| SingleCommand::new(command, quiet, sudo));
+
+    //     commands.append(&mut vector_of_commands);
+    // }
+
+    // // Now convert vector of `SingleCommand` to CommandBlock
+    // let command_block = CommandBlock::new(commands, "TODO -- get the description".to_string());
+
+    // println!("{:?}", command_block);
+    // println!("Exiting the function");
+    // return command_block;
 }
 
-/// Tests related to failing commands management
+/// Tests associated with the run of a single command
 #[cfg(test)]
-mod command_failures_test {
-    use super::CommandBlock;
-    use super::CommandError;
-    use super::CommandErrorType;
+mod single_command_test{
+    use super::SingleCommand;
 
     #[test]
-    pub fn command_execution_fails(){
-        let failing_command = CommandBlock::new(
-            "bash -c this does not exist".to_string(),
-            false,
-            vec!["this commnand does not exist".to_string()],
-            false
-        );
+    pub fn test_failing_command() -> Result<(), String>{
+        // Build and run a failing command
+        let command = SingleCommand::new(
+            "This command does not exist".to_string(), false, false
+        )?;
+        let result = command.run();
 
-        let execution_result = failing_command.execute().expect_err("This command should generate an error");
-        println!("Error is {}", execution_result);
-        let execution_result = execution_result.error_type;
-        let execution_expected = CommandErrorType::ExecutionError;
-        assert_eq!(execution_result, execution_expected, "Expected: {:?}, got: {:?}", execution_expected, execution_result);
+        // Check that the command failed to run
+        match result{
+            Ok(value) => return Err(format!("Expected error, obtained {:?}", value)),
+            Err(_) => return Ok(()),
+        }
+    }
 
+    #[test]
+    pub fn test_basic_command_runs() -> Result<(), String>{
+        // Build and run a failing command
+        let command = SingleCommand::new(
+            "ls -la".to_string(), false, false
+        )?;
 
+        let result = command.run();
+
+        // Check that the command didn't have problems running
+        match result{
+            Ok(_) => return Ok(()),
+            Err(err) => return Err(format!("Command failed to run. Error code was: {:?}", err))
+        }
     }
 
 }
+
+// Tests related to failing commands management
+// #[cfg(test)]
+// mod command_failures_test {
+    // use super::CommandBlock;
+
+    // #[test]
+    // pub fn command_execution_fails(){
+    //     let failing_command = CommandBlock::new(
+    //         "Testing with a command that does not exist".to_string(),
+    //         false,
+    //         vec![
+    //             "bash".to_string(),
+    //             "-c".to_string(),
+    //             "commandthatdoesnotexist".to_string(),
+    //             "-irrelevantparameter".to_string()
+    //         ],
+    //         false
+    //     );
+
+    //     let execution_result = failing_command.execute().expect_err("This command should generate an error");
+    //     println!("Error is {}", execution_result);
+    //     let execution_result = execution_result.error_type;
+    //     let execution_expected = CommandErrorType::ExecutionError;
+    //     assert_eq!(execution_result, execution_expected, "Expected: {:?}, got: {:?}", execution_expected, execution_result);
+
+
+    // }
+
+// }
