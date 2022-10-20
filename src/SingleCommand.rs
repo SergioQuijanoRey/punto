@@ -153,10 +153,10 @@ mod single_command_test{
     }
 
     #[test]
-    pub fn test_install_unexisting_package_fails() -> Result<(), String>{
+    pub fn test_failing_command_in_runtime() -> Result<(), String>{
         // Build and run a failing command
         let command = SingleCommand::new(
-            "pacman -S thispackagedoesnotexist".to_string(), false, true
+            "ls -lah /dev/thisdirdoesnotexist".to_string(), false, true
         ).expect("This command doesn't have sudo at the start");
 
         let result = command.run();
