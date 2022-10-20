@@ -170,4 +170,17 @@ mod single_command_test{
             Err(SingleCommandError::RuntimeFailure(_)) => return Ok(()),
         }
     }
+
+    #[test]
+    pub fn test_sudo_in_command_fails() -> Result<(), String>{
+        // Build and run a failing command
+        let command_result = SingleCommand::new(
+            "sudo ls -lah /dev/thisdirdoesnotexist".to_string(), false, true
+        );
+
+        match command_result{
+            Ok(_) => return Err("Command has sudo in the string command and thus should not build".to_string()),
+            Err(_) => return Ok(()),
+        }
+    }
 }
