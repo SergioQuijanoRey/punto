@@ -15,22 +15,20 @@ struct InstallerSection {
 
     /// List of packages to install
     packages: Vec<String>,
-}
 
-/// List of packages that failed to install
-/// This packages belong to the same InstallerSection
-struct FailedPackages{
-    section_name: String,
-    failed_packages: Vec<String>,
+    /// Wether or not to use sudo for installing the packages
+    /// Some package managers don't use sudo
+    sudo: bool,
 }
 
 impl InstallerSection {
     /// Creates a new InstallerSection struct
-    pub fn new(name: String, install_command: String, packages: Vec<String>) -> Self {
+    pub fn new(name: String, install_command: String, packages: Vec<String>, sudo: bool) -> Self {
         return InstallerSection {
             name,
             install_command,
             packages,
+            sudo,
         };
     }
 
@@ -44,10 +42,9 @@ impl InstallerSection {
 
         for package in &self.packages {
             let quiet = false;
-            let sudo = true;
 
             let command_string = format!("{} {}", self.install_command, package);
-            let command = SingleCommand::SingleCommand::new(command_string, quiet, sudo).expect("Install command failed to build");
+            let command = SingleCommand::SingleCommand::new(command_string, quiet, self.sudo).expect("Install command failed to build");
 
             // Run the command. If it fails, add to the list of failed commands
             match command.run(){
@@ -65,6 +62,47 @@ impl InstallerSection {
 
         return Some(failed_packages);
     }
+}
+
+#[cfg(test)]
+mod test_installer_section{
+    use super::InstallerSection;
+
+
+    #[test]
+    pub fn test_failed_packages_are_properly_tracked() -> Result<(), String>{
+        // Build a InstallerSection with some non-existing packages
+        let sudo = true;
+        let section = InstallerSection::new(
+            "Install some packages".to_string(),
+            "pacman -S".to_string(),
+            vec!["git".to_string(), "thispackagedoesnotexist".to_string(), "exa".to_string()],
+            sudo,
+        );
+
+        // Run the installation and collect the packages
+        let failed_packages = section.install_all_packages();
+
+        // There must be at least one failed package
+        let failed_packages = match failed_packages{
+            None => return Err("Some failed packages were expected".to_string()),
+            Some(failed_packages) => failed_packages,
+        };
+
+        // Check that the failed package is the one we are expecting
+        assert_eq!(failed_packages.failed_packages, vec!["thispackagedoesnotexist".to_string()]);
+
+        // Everything went ok
+        return Ok(());
+    }
+
+}
+
+/// List of packages that failed to install
+/// This packages belong to the same InstallerSection
+struct FailedPackages{
+    section_name: String,
+    failed_packages: Vec<String>,
 }
 
 impl FailedPackages{
@@ -222,10 +260,12 @@ fn parse_yaml_installer(file_path: &str) -> Vec<InstallerSection> {
             .into_iter()
             .map(|package| package.as_str().unwrap().to_string())
             .collect();
+        let sudo = value["sudo"].as_bool().expect("Install command does not have sudo");
         installer_blocks.push(InstallerSection {
             name,
             install_command,
             packages,
+            sudo,
         });
     }
 
