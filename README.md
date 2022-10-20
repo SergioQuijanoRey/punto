@@ -99,12 +99,14 @@ Run `punto --install packages.yaml`
 
 ~~~yaml
 common:
-    install_command: sudo pacman -S --noconfirm
+    install_command: pacman -S --noconfirm
+    sudo: true
     packages:
         - git
         - htop
 pacman:
-    install_command: sudo pacman -S --noconfirm
+    install_command: pacman -S --noconfirm
+    sudo: true
     packages:
         - yay
         - sudo
@@ -117,6 +119,7 @@ pacman:
         - fd                      # Good replacement for find
 aur:
     install_command: paru -S --noconfirm
+    sudo: false
     packages:
         - bat         # A better cat alternative
         - bottom      # A better top alternative
