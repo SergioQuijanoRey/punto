@@ -1,4 +1,6 @@
-use std::process::Command;
+use std::collections::HashMap;
+use std::process::{Command, Stdio};
+use std::env;
 
 /// Represents a shell command to execute
 #[derive(Debug)]
@@ -60,6 +62,17 @@ impl SingleCommand{
             Ok(child) => child,
         };
 
+        // Wait the command to run and capture the output
+        let output = match handler.wait_with_output(){
+            Err(err) => return Err(SingleCommandError::RuntimeFailure(format!("{:?}", err))),
+            Ok(value) => value,
+        };
+
+        // Check if there was an error in the execution
+        if output.stderr.len() > 0 {
+            return Err(SingleCommandError::RuntimeFailure(format!("{:?}", output.stderr)));
+        }
+
         return Ok(());
     }
 
@@ -71,8 +84,22 @@ impl SingleCommand{
 
         // Construct the builder `Command`
         let mut builder = Command::new(string_parts[0]);
-        for arg in string_parts.iter().skip(0){
+        for (index, arg) in string_parts.iter().enumerate(){
+
+            // We have already used first arg
+            if index == 0{
+                continue;
+            }
+
             builder.arg(arg);
+        }
+
+        // Inherit the stdio so we can get user input
+        builder.stdin(Stdio::inherit());
+
+        // Do not show the output if specified as such
+        if self.quiet == true{
+            builder.stdout(Stdio::null());
         }
 
         return builder;
