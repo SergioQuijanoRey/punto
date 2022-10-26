@@ -1,4 +1,4 @@
-use std::process::{Command, Stdio};
+use std::{process::{Command, Stdio}, collections::HashMap, env};
 
 /// Represents a shell command to execute
 #[derive(Debug)]
@@ -105,6 +105,11 @@ impl SingleCommand{
 
         // Inherit the stdio so we can get user input
         builder.stdin(Stdio::inherit());
+
+        // Inherit the user env vars
+        let user_env_vars: HashMap<String, String> = env::vars().collect();
+        builder.env_clear();
+        builder.envs(user_env_vars);
 
         // Do not show the output if specified as such
         if self.quiet == true{
