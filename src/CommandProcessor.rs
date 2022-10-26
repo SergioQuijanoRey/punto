@@ -1,9 +1,9 @@
 // TODO -- split in different modules, file too large
 
-use crate::YamlProcessor;
-use std::collections::HashMap;
+use crate::{YamlProcessor, SingleCommand};
+use std::{collections::HashMap, process::exit};
 use std::env;
-use crate::SingleCommand::{SingleCommand, SingleCommandError};
+use crate::SingleCommand::{SingleCommandError};
 
 /// Represent a group of commands to execute in sequence
 /// If one command fails, the rest of the commands won't be executed
@@ -12,7 +12,7 @@ use crate::SingleCommand::{SingleCommand, SingleCommandError};
 pub struct CommandBlock {
 
     /// The sequence of commands
-    commands: Vec<SingleCommand>,
+    commands: Vec<SingleCommand::SingleCommand>,
 
     /// To describe what is the purpose of this block of commands
     description: String,
@@ -21,7 +21,7 @@ pub struct CommandBlock {
 
 impl CommandBlock {
     /// Creates a new CommandBlock
-    pub fn new(commands: Vec<SingleCommand>, description: String) -> Self {
+    pub fn new(commands: Vec<SingleCommand::SingleCommand>, description: String) -> Self {
         return CommandBlock {
             commands,
             description,
@@ -37,59 +37,12 @@ impl CommandBlock {
 
         for command in &self.commands {
             // Run the command. Return the error if we find one
-            let result = command.run()?;
+            let _result = command.run()?;
         }
 
         // All commands executed well
         return Ok(());
     }
-
-    // /// Runs a given shell command in interactive mode
-    // /// It should never be called directly, thus is private
-    // /// Returns the result of executing the command
-    // // TODO -- remove deprecated function
-    // fn run_shell_command(command: &str) -> Result<(), CommandError>{
-    //     let user_env_vars: HashMap<String, String> = env::vars().collect();
-
-    //     // Launch the command
-    //     // TODO -- BUG -- because we're passing bash as command, never fails
-    //     // TODO -- BUG -- pass directly the command
-    //     // TODO -- try with this stackoverflow post: https://stackoverflow.com/questions/21011330/how-do-i-invoke-a-system-command-and-capture-its-output
-    //     let status = Command::new(command)
-    //         .env_clear()
-    //         .envs(user_env_vars)
-    //         .stdin(Stdio::inherit())
-    //         .status();
-
-    //     // Check for status of the command
-    //     match status{
-    //         Ok(exit_status) => {
-
-    //             // Check if status code was ok
-    //             if exit_status.success() == true {
-    //                 return Ok(());
-    //             }
-
-    //             // Status code is not ok, return error
-    //             match exit_status.code() {
-
-    //                 // Execution ended not because user terminated it
-    //                 Some(value) => return Err(CommandError::new_execution_error(value)),
-
-    //                 // Exectution ended because user terminated it
-    //                 None => {
-    //                     return Err(CommandError::new_user_termination());
-    //                 }
-    //             };
-    //         },
-
-    //         // Some weird error happened
-    //         // TODO -- not sure at all about this
-    //         Err(err) => {
-    //             return Err(CommandError::new_not_started(err));
-    //         },
-    //     };
-    // }
 }
 
 
@@ -107,42 +60,53 @@ pub fn handle_shell_command(yaml_file: &str) {
 
 /// Given a yaml file path, it returns the CommandOptions vector which are used to launch a command
 fn parse_yaml_command(file_path: &str) -> Vec<CommandBlock> {
-    // TODO -- we're returning an empty vector
-    return vec![];
 
-    // let parsed_contents = YamlProcessor::parse_yaml(file_path);
-    // // TODO -- this block of code is repeated
-    // let parsed_contents = match parsed_contents{
-    //     Ok(contents) => contents,
-    //     Err(err) => {
-    //         eprintln!("Could not parse {}, exiting now", file_path);
-    //         eprintln!("Error code was {}", err);
-    //         exit(-1);
-    //     }
-    // };
+    let parsed_contents = YamlProcessor::parse_yaml(file_path);
+    let parsed_contents = match parsed_contents{
+        Ok(contents) => contents,
+        Err(err) => {
+            eprintln!("Could not parse {}, exiting now", file_path);
+            eprintln!("Error code was {}", err);
+            exit(-1);
+        }
+    };
 
-    // let mut commands = vec![];
+    let mut command_blocks = vec![];
 
-    // // Getting the commands from the yaml file into struct
-    // for (_, value) in parsed_contents.as_hash().unwrap().iter() {
-    //     // TODO -- panics here
-    //     let vector_of_commands = value["commands"].as_vec().unwrap();
-    //     let vector_of_commands: Vec<String> = vector_of_commands
-    //         .into_iter()
-    //         .map(|command| command.as_str().unwrap().to_string())
-    //         .collect();
+    // Getting the commands from the yaml file into struct
+    for (_, value) in parsed_contents.as_hash().unwrap().iter() {
 
-    //     let quiet = value["quiet"].as_bool().unwrap_or(false);
-    //     let sudo = value["sudo"].as_bool().unwrap_or(false);
-    //     let vector_of_commands: Vec<SingleCommand> = vector_of_commands.iter().map(|command| SingleCommand::new(command, quiet, sudo));
+        println!("Value hash is {:?}", value["description"]);
 
-    //     commands.append(&mut vector_of_commands);
-    // }
+        // Get the description of the block
+        let description = value["description"].as_str().unwrap_or("No description provided");
 
-    // // Now convert vector of `SingleCommand` to CommandBlock
-    // let command_block = CommandBlock::new(commands, "TODO -- get the description".to_string());
+        // Get if the commands need sudo
+        let sudo = value["sudo"].as_bool().unwrap_or(false);
 
-    // println!("{:?}", command_block);
-    // println!("Exiting the function");
-    // return command_block;
+        // Get if the commands need to be run quietly
+        let quiet = value["quiet"].as_bool().unwrap_or(false);
+
+
+        // Get all the commands of this block
+        let vector_of_commands = value["commands"].as_vec().unwrap();
+        let vector_of_commands: Vec<String> = vector_of_commands
+            .into_iter()
+            .map(|command| command.as_str().unwrap().to_string())
+            .collect();
+
+        // Create a vector of single commands
+        let commands: Vec<SingleCommand::SingleCommand> = vector_of_commands
+            .into_iter()
+            .map(|command_string| SingleCommand::SingleCommand::new(command_string, quiet, sudo).unwrap())
+            .collect();
+
+        // Now create the current command block
+        let current_command_block = CommandBlock::new(commands, description.to_string());
+
+        // And add that command block to our vector of command blocks
+        command_blocks.push(current_command_block);
+    }
+
+    return command_blocks;
 }
