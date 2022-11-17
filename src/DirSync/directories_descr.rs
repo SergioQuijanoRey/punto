@@ -1,4 +1,4 @@
-use crate::DirSync::file_operations::{join_two_paths, sync_dir, sync_file};
+use crate::DirSync::file_operations::{join_two_paths, copy_dir_recursively};
 use crate::DirSync::dir_file_type::DirFileType;
 use crate::DirSync::DirBlock;
 
@@ -20,9 +20,7 @@ impl DirectoriesDescr {
 
     /// Generates a new struct
     pub fn new(repo_base: String, system_base: String, dir_blocks: Vec<DirBlock>) -> Self {
-        // Create and check the new struct
-        let new_struct = Self{repo_base, system_base, dir_blocks};
-        return new_struct;
+        return Self{repo_base, system_base, dir_blocks};
     }
 
     /// Appends a new DirBlock to the struct
@@ -42,10 +40,12 @@ impl DirectoriesDescr {
 
             let ignore_files = &dir_block.ignore_files();
 
+            // TODO -- BUG -- this might be badly implemented
+            // TODO -- BUG -- copy_dir_recursively result must be handled
             match &dir_block.sync_type() {
-                DirFileType::File => sync_file(from, to),
-                DirFileType::Dir => sync_dir(from, to, ignore_files),
-            }
+                DirFileType::File => copy_dir_recursively(from, to, &vec![], false).expect("Failed to sync file"),
+                DirFileType::Dir => copy_dir_recursively(from, to, ignore_files, false).expect("Failed to sync dir"),
+            };
         }
     }
 
@@ -61,10 +61,12 @@ impl DirectoriesDescr {
 
             let ignore_files = &dir_block.ignore_files();
 
+            // TODO -- BUG -- this might be badly implemented
+            // TODO -- BUG -- copy_dir_recursively result must be handled
             match &dir_block.sync_type() {
-                DirFileType::File => sync_file(from, to),
-                DirFileType::Dir => sync_dir(from, to, ignore_files),
-            }
+                DirFileType::File => copy_dir_recursively(from, to, &vec![], false).expect("Failed to sync file"),
+                DirFileType::Dir => copy_dir_recursively(from, to, ignore_files, false).expect("Failed to sync dir"),
+            };
         }
     }
 }
