@@ -58,7 +58,24 @@ pub fn copy_dir_recursively(from: &str, to: &str, ignore_files: &Vec<String>) ->
     let to = add_last_slash_to_path(&to);
 
     // Build a bash command based on rsync to perform the operation
-    let command_content = format!("rsync -zaP {from} {to}");
+    // This has to be done in three steps due to ignore_files nature
+
+    // Step 1: create the base of the command string
+    let mut command_content = format!("rsync -zaP ");
+
+    // Step 2: add the ignored files
+    if ignore_files.is_empty() == false{
+        for excluded_file in ignore_files{
+            command_content.push_str(&format!("--exclude {excluded_file} "));
+        }
+    }
+
+    // Step 3: specify source and destination
+    command_content.push_str(&format!("{from} {to}"));
+
+    println!("TODO -- remove me -- command is {command_content}");
+
+
     let quiet = false;
     let sudo = false;
     let command = SingleCommand::SingleCommand::new(
@@ -277,7 +294,7 @@ mod tests {
         // Copy now to another path
         let from = "./dir_tests";
         let to = "./dir_tests/pruebas";
-        let ignore_files = vec!["./dir_tests/src/first.rs".to_string(), "./dir_tests/src/first.rs".to_string()];
+        let ignore_files = vec!["src/first.rs".to_string(), "src/second.rs".to_string()];
         copy_dir_recursively(from, to, &ignore_files).expect("Copy operation failed to run");
 
         // Make some checks about the dirs
