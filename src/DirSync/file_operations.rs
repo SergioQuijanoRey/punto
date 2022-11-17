@@ -46,10 +46,10 @@ fn add_last_slash_to_path(path: &str) -> String{
 
 /// Copies one dir to other recursively
 /// Files in the `to` dir that are not present in the `from` dir are preserved
+/// `ignore_paths` can be both file and dir paths
+/// `ignore_paths` must be relative paths based on `to` path
 // TODO -- we're using rsync to do this, move that to native rust code
-// TODO -- needs a lots of testing
-// TODO -- BUG -- we are not ignoring files
-pub fn copy_dir_recursively(from: &str, to: &str, ignore_files: &Vec<String>) -> Result<(), FileOperationError>{
+pub fn copy_dir_recursively(from: &str, to: &str, ignore_paths: &Vec<String>) -> Result<(), FileOperationError>{
 
     // For using rsync, last char in the paths must be /
     // So make some checks and do the conversion if they fail
@@ -64,17 +64,14 @@ pub fn copy_dir_recursively(from: &str, to: &str, ignore_files: &Vec<String>) ->
     let mut command_content = format!("rsync -zaP ");
 
     // Step 2: add the ignored files
-    if ignore_files.is_empty() == false{
-        for excluded_file in ignore_files{
+    if ignore_paths.is_empty() == false{
+        for excluded_file in ignore_paths{
             command_content.push_str(&format!("--exclude {excluded_file} "));
         }
     }
 
     // Step 3: specify source and destination
     command_content.push_str(&format!("{from} {to}"));
-
-    println!("TODO -- remove me -- command is {command_content}");
-
 
     let quiet = false;
     let sudo = false;
@@ -190,9 +187,11 @@ mod tests {
     use std::fs;
     use std::path::Path;
 
-    use crate::DirSync::file_operations::add_last_slash_to_path;
-
-    use super::{join_two_paths, copy_dir_recursively};
+    use crate::DirSync::file_operations::{
+        add_last_slash_to_path,
+        join_two_paths,
+        copy_dir_recursively
+    };
 
     #[test]
     fn test_join_two_paths_basic() {
