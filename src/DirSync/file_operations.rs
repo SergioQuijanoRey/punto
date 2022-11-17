@@ -1,3 +1,5 @@
+use std::{fs, path::Path};
+
 /// Module to implement file operations such as copy files, copy dirs, create dirs, ...
 
 use crate::SingleCommand;
@@ -6,7 +8,10 @@ use crate::SingleCommand;
 pub enum FileOperationError{
 
     // Error ocurred while copying one dir to another dir
-    DirCopyError(String),
+    SyncDirError(String),
+
+    /// Copying one file to another place failed
+    FileCopyError(String),
 }
 
 /// Gets a path and adds a last "/" if it is not present
@@ -38,7 +43,7 @@ fn add_last_slash_to_path(path: &str) -> String{
     return transformted_path;
 }
 
-/// Syncs two paths. Can be both files or directories
+/// Syncs two paths
 /// `ignore_paths` can be both file and dir paths
 /// `ignore_paths` must be relative paths based on `from` path
 ///
@@ -46,7 +51,7 @@ fn add_last_slash_to_path(path: &str) -> String{
 /// in `to` path will be removed
 ///
 // TODO -- we're using rsync to do this, move that to native rust code
-pub fn sync(from: &str, to: &str, ignore_paths: &Vec<String>, remove_files: bool) -> Result<(), FileOperationError>{
+pub fn sync_dir(from: &str, to: &str, ignore_paths: &Vec<String>, remove_files: bool) -> Result<(), FileOperationError>{
 
     // For using rsync, last char in the paths must be /
     // So make some checks and do the conversion if they fail
@@ -75,6 +80,8 @@ pub fn sync(from: &str, to: &str, ignore_paths: &Vec<String>, remove_files: bool
     // Step 3: specify source and destination
     command_content.push_str(&format!("{from} {to}"));
 
+    println!("TODO -- remove me -- command was {command_content}");
+
     let quiet = false;
     let sudo = false;
     let command = SingleCommand::SingleCommand::new(
@@ -84,7 +91,7 @@ pub fn sync(from: &str, to: &str, ignore_paths: &Vec<String>, remove_files: bool
     // Check that the command is valid
     let command = match command{
         Ok(result) => result,
-        Err(err) => return Err(FileOperationError::DirCopyError(format!("rsync command creation failed: {err:?}"))),
+        Err(err) => return Err(FileOperationError::SyncDirError(format!("rsync command creation failed: {err:?}"))),
     };
 
     // Run the command
@@ -94,10 +101,42 @@ pub fn sync(from: &str, to: &str, ignore_paths: &Vec<String>, remove_files: bool
     // Translate SingleCommandError to a higher level of abstraction error
     let operation_result = match command_result {
         Ok(_) => Ok(()),
-        Err(err) => Err(FileOperationError::DirCopyError(format!("Rsync error was {err:?}"))),
+        Err(err) => Err(FileOperationError::SyncDirError(format!("Rsync error was {err:?}"))),
     };
 
     return operation_result;
+}
+
+/// Copies one file to another location
+/// Creates the `to` folder if it does not exist
+pub fn sync_file(from: &str, to: &str) -> Result<(), FileOperationError>{
+
+    // Create the path to store the file if it does not exist
+    let parent_dir = match Path::new(to).parent() {
+        Some(path) => path,
+        None => return Err(FileOperationError::FileCopyError("Could not retreive parent of dest file".to_string())),
+    };
+
+    // Now we get the string from the parent object
+    let parent_dir = match parent_dir.to_str(){
+        Some(path) => path,
+        None => return Err(FileOperationError::FileCopyError("Could not get the string from the Path object".to_string())),
+    };
+
+    let create_dir_result = fs::create_dir_all(parent_dir);
+    match create_dir_result{
+        Ok(_) => (),
+        Err(err) => return Err(FileOperationError::FileCopyError(format!("Could not create dirs for the new file, err was: {err}"))),
+    }
+
+    // Copy the file
+    let result = fs::copy(from, to);
+
+    // Return the result of the copy operation
+    return match result{
+        Ok(_) => return Ok(()),
+        Err(err) => return Err(FileOperationError::FileCopyError(format!("File copy got following error: {err}"))),
+    };
 }
 
 /// Joins two paths given in strings
@@ -120,7 +159,7 @@ mod tests {
     use crate::DirSync::file_operations::{
         add_last_slash_to_path,
         join_two_paths,
-        sync
+        sync_dir, sync_file
     };
 
     #[test]
@@ -182,7 +221,7 @@ mod tests {
     }
 
     #[test]
-    fn test_copy_dir_recursively_base_case(){
+    fn test_sync_base_case_dirs(){
 
         // Start creating a basic file structure
         // If a test fails, this structure might be already created, so delete if first
@@ -194,7 +233,7 @@ mod tests {
         let to = "./dir_tests/pruebas";
         let ignore_files = vec![];
         let remove_files = false;
-        sync(from, to, &ignore_files, remove_files).expect("Copy operation failed to run");
+        sync_dir(from, to, &ignore_files, remove_files).expect("Copy operation failed to run");
 
         // Make some checks about the dirs
         assert!(Path::new("./dir_tests/pruebas/").exists(), "New dir hierarchy was not created properly");
@@ -214,7 +253,7 @@ mod tests {
     }
 
     #[test]
-    fn test_copy_dir_recursively_ignore_files(){
+    fn test_sync_dir_ignore_files(){
 
         // Start creating a basic file structure
         // If a test fails, this structure might be already created, so delete if first
@@ -226,7 +265,7 @@ mod tests {
         let to = "./dir_tests/pruebas";
         let ignore_files = vec!["src/first.rs".to_string(), "src/second.rs".to_string()];
         let remove_files = false;
-        sync(from, to, &ignore_files, remove_files).expect("Copy operation failed to run");
+        sync_dir(from, to, &ignore_files, remove_files).expect("Copy operation failed to run");
 
         // Make some checks about the dirs
         assert!(Path::new("./dir_tests/pruebas/").exists(), "New dir hierarchy was not created properly");
@@ -246,5 +285,28 @@ mod tests {
         remove_basic_file_structure();
     }
 
-    // TODO -- TEST -- test remove_files behaviour
+
+    #[test]
+    fn test_sync_file_base_case(){
+
+        // Start creating a basic file structure
+        // If a test fails, this structure might be already created, so delete if first
+        remove_basic_file_structure();
+        create_basic_file_structure().expect("Could not create basic file structure for the test");
+
+        // Sync just a single file
+        let from = "./dir_tests/src/first.rs";
+        let to = "./dir_tests/pruebas/code/first.rs";
+        sync_file(from, to).expect("Copy operation failed to run");
+
+        // Check that the dir for the file was created
+        assert!(Path::new("./dir_tests/pruebas/code").exists(), "Dir for the new file was not created");
+
+        // Now check that the file itself exists
+        assert!(Path::new("./dir_tests/pruebas/code/first.rs").exists(), "File was not properly copyed");
+
+        // Now, remove the file hierarchy created
+        remove_basic_file_structure();
+    }
+
 }
