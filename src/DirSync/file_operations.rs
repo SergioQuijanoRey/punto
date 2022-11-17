@@ -4,6 +4,13 @@ use std::{fs, path::Path, process::exit};
 
 use crate::SingleCommand;
 
+#[derive(Debug)]
+pub enum FileOperationError{
+
+    // Error ocurred while copying one dir to another dir
+    DirCopyError(String),
+}
+
 /// Creates recursively a dir if does not exist
 // TODO -- not sure if it is creating dir recursively if depth is greater than 2
 pub fn create_dir_if_not_exists(path: &str) {
@@ -18,13 +25,6 @@ pub fn create_dir_if_not_exists(path: &str) {
             Ok(_) => (),
         }
     }
-}
-
-#[derive(Debug)]
-pub enum FileOperationError{
-
-    // Error ocurred while copying one dir to another dir
-    DirCopyError(String),
 }
 
 /// Gets a path and adds a last "/" if it is not present
@@ -59,7 +59,6 @@ pub fn copy_dir_recursively(from: &str, to: &str, ignore_files: &Vec<String>) ->
 
     // Build a bash command based on rsync to perform the operation
     let command_content = format!("rsync -zaP {from} {to}");
-    println!("TODO -- command is {command_content}");
     let quiet = false;
     let sudo = false;
     let command = SingleCommand::SingleCommand::new(
@@ -259,6 +258,38 @@ mod tests {
         assert!(Path::new("./dir_tests/pruebas/src/first.rs").exists(), "New dir hierarchy was not created properly");
         assert!(Path::new("./dir_tests/pruebas/src/second.rs").exists(), "New dir hierarchy was not created properly");
         assert!(Path::new("./dir_tests/pruebas/src/third.rs").exists(), "New dir hierarchy was not created properly");
+
+        assert!(Path::new("./dir_tests/pruebas/test/first_test.rs").exists(), "New dir hierarchy was not created properly");
+        assert!(Path::new("./dir_tests/pruebas/test/second_test.rs").exists(), "New dir hierarchy was not created properly");
+
+        // Now, remove the file hierarchy created
+        remove_basic_file_structure();
+    }
+
+    #[test]
+    fn test_copy_dir_recursively_ignore_files(){
+
+        // Start creating a basic file structure
+        // If a test fails, this structure might be already created, so delete if first
+        remove_basic_file_structure();
+        create_basic_file_structure().expect("Could not create basic file structure for the test");
+
+        // Copy now to another path
+        let from = "./dir_tests";
+        let to = "./dir_tests/pruebas";
+        let ignore_files = vec!["./dir_tests/src/first.rs".to_string(), "./dir_tests/src/first.rs".to_string()];
+        copy_dir_recursively(from, to, &ignore_files).expect("Copy operation failed to run");
+
+        // Make some checks about the dirs
+        assert!(Path::new("./dir_tests/pruebas/").exists(), "New dir hierarchy was not created properly");
+        assert!(Path::new("./dir_tests/pruebas/src").exists(), "New dir hierarchy was not created properly");
+        assert!(Path::new("./dir_tests/pruebas/test").exists(), "New dir hierarchy was not created properly");
+
+        // Now check the paths
+        assert_eq!(Path::new("./dir_tests/pruebas/src/first.rs").exists(), false, "Ignored file is present");
+        assert_eq!(Path::new("./dir_tests/pruebas/src/second.rs").exists(), false, "Ignored file is present");
+        assert!(Path::new("./dir_tests/pruebas/src/third.rs").exists(), "New dir hierarchy was not created properly");
+
 
         assert!(Path::new("./dir_tests/pruebas/test/first_test.rs").exists(), "New dir hierarchy was not created properly");
         assert!(Path::new("./dir_tests/pruebas/test/second_test.rs").exists(), "New dir hierarchy was not created properly");
