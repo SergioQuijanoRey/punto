@@ -10,8 +10,20 @@ pub enum FileOperationError{
 }
 
 /// Gets a path and adds a last "/" if it is not present
-/// i.e. some/path -> some/path/
-/// i.e other/path/ -> do nothing
+/// This is needed for the rsync command
+///
+/// # Examples
+/// ```
+/// # some/path -> some/path/
+/// let original_path = "some/path";
+/// let transformted_path = add_last_slash_to_path(original_path);
+/// assert_eq!(transformted_path, "some/path/", "add_last_slash_to_path did not added last slash");
+///
+/// # other/path/ -> do nothing
+/// let original_path = "some/path/";
+/// let transformted_path = add_last_slash_to_path(original_path);
+/// assert_eq!(transformted_path, "some/path/", "add_last_slash_to_path changed a path that was correct at first");
+/// ```
 fn add_last_slash_to_path(path: &str) -> String{
     let last_char = path.chars().last().unwrap();
 
@@ -26,15 +38,15 @@ fn add_last_slash_to_path(path: &str) -> String{
     return transformted_path;
 }
 
-/// Copies one dir to other recursively
+/// Syncs two paths. Can be both files or directories
 /// `ignore_paths` can be both file and dir paths
-/// `ignore_paths` must be relative paths based on `to` path
+/// `ignore_paths` must be relative paths based on `from` path
 ///
 /// If `remove_files` is true, files and dirs that are not present in `from` path but are present
 /// in `to` path will be removed
 ///
 // TODO -- we're using rsync to do this, move that to native rust code
-pub fn copy_dir_recursively(from: &str, to: &str, ignore_paths: &Vec<String>, remove_files: bool) -> Result<(), FileOperationError>{
+pub fn sync(from: &str, to: &str, ignore_paths: &Vec<String>, remove_files: bool) -> Result<(), FileOperationError>{
 
     // For using rsync, last char in the paths must be /
     // So make some checks and do the conversion if they fail
@@ -108,7 +120,7 @@ mod tests {
     use crate::DirSync::file_operations::{
         add_last_slash_to_path,
         join_two_paths,
-        copy_dir_recursively
+        sync
     };
 
     #[test]
@@ -182,7 +194,7 @@ mod tests {
         let to = "./dir_tests/pruebas";
         let ignore_files = vec![];
         let remove_files = false;
-        copy_dir_recursively(from, to, &ignore_files, remove_files).expect("Copy operation failed to run");
+        sync(from, to, &ignore_files, remove_files).expect("Copy operation failed to run");
 
         // Make some checks about the dirs
         assert!(Path::new("./dir_tests/pruebas/").exists(), "New dir hierarchy was not created properly");
@@ -214,7 +226,7 @@ mod tests {
         let to = "./dir_tests/pruebas";
         let ignore_files = vec!["src/first.rs".to_string(), "src/second.rs".to_string()];
         let remove_files = false;
-        copy_dir_recursively(from, to, &ignore_files, remove_files).expect("Copy operation failed to run");
+        sync(from, to, &ignore_files, remove_files).expect("Copy operation failed to run");
 
         // Make some checks about the dirs
         assert!(Path::new("./dir_tests/pruebas/").exists(), "New dir hierarchy was not created properly");

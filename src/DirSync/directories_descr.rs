@@ -1,4 +1,4 @@
-use crate::DirSync::file_operations::{join_two_paths, copy_dir_recursively};
+use crate::DirSync::file_operations::{join_two_paths, sync};
 use crate::DirSync::dir_file_type::DirFileType;
 use crate::DirSync::DirBlock;
 
@@ -43,8 +43,8 @@ impl DirectoriesDescr {
             // TODO -- BUG -- this might be badly implemented
             // TODO -- BUG -- copy_dir_recursively result must be handled
             match &dir_block.sync_type() {
-                DirFileType::File => copy_dir_recursively(from, to, &vec![], false).expect("Failed to sync file"),
-                DirFileType::Dir => copy_dir_recursively(from, to, ignore_files, false).expect("Failed to sync dir"),
+                DirFileType::File => sync(from, to, &vec![], false).expect("Failed to sync file"),
+                DirFileType::Dir => sync(from, to, ignore_files, false).expect("Failed to sync dir"),
             };
         }
     }
@@ -64,8 +64,8 @@ impl DirectoriesDescr {
             // TODO -- BUG -- this might be badly implemented
             // TODO -- BUG -- copy_dir_recursively result must be handled
             match &dir_block.sync_type() {
-                DirFileType::File => copy_dir_recursively(from, to, &vec![], false).expect("Failed to sync file"),
-                DirFileType::Dir => copy_dir_recursively(from, to, ignore_files, false).expect("Failed to sync dir"),
+                DirFileType::File => sync(from, to, &vec![], false).expect("Failed to sync file"),
+                DirFileType::Dir => sync(from, to, ignore_files, false).expect("Failed to sync dir"),
             };
         }
     }
