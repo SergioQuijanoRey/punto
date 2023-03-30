@@ -1,6 +1,7 @@
 use std::{fs, path::Path};
 
-/// Module to implement file operations such as copy files, copy dirs, create dirs, ...
+/// Module to implement basic file operations such as copy files, copy dirs,
+/// create dirs, ...
 
 use crate::SingleCommand;
 
@@ -200,22 +201,23 @@ mod tests {
 
     /// A lot of tests need to work in top a file hierarchy structure
     /// So with this function we can create a basic structure
-    fn create_basic_file_structure() -> Option<()>{
-        fs::create_dir("./dir_tests").ok()?;
-        fs::create_dir("./dir_tests/src").ok()?;
-        fs::create_dir("./dir_tests/test").ok()?;
-        fs::File::create("./dir_tests/src/first.rs").ok()?;
-        fs::File::create("./dir_tests/src/second.rs").ok()?;
-        fs::File::create("./dir_tests/src/third.rs").ok()?;
-        fs::File::create("./dir_tests/test/first_test.rs").ok()?;
-        fs::File::create("./dir_tests/test/second_test.rs").ok()?;
+    /// NOTE: do not share root folder, because tests might be run in parallel
+    fn create_basic_file_structure(base_path: &str) -> Option<()>{
+        fs::create_dir(Path::new(base_path)).ok()?;
+        fs::create_dir(Path::new(base_path).join("src")).ok()?;
+        fs::create_dir(Path::new(base_path).join("test")).ok()?;
+        fs::File::create(Path::new(base_path).join("src/first.rs")).ok()?;
+        fs::File::create(Path::new(base_path).join("src/second.rs")).ok()?;
+        fs::File::create(Path::new(base_path).join("src/third.rs")).ok()?;
+        fs::File::create(Path::new(base_path).join("test/first_test.rs")).ok()?;
+        fs::File::create(Path::new(base_path).join("test/second_test.rs")).ok()?;
 
         return Some(());
     }
 
     /// Remove the basic file structure created with `create_basic_file_structure`
-    fn remove_basic_file_structure() -> Option<()>{
-        fs::remove_dir_all("./dir_tests").ok()?;
+    fn remove_basic_file_structure(base_path: &str) -> Option<()>{
+        fs::remove_dir_all(base_path).ok()?;
 
         return Some(());
     }
@@ -223,10 +225,13 @@ mod tests {
     #[test]
     fn test_sync_base_case_dirs(){
 
+        let base_path = "test_sync_base_case_dirs";
+
         // Start creating a basic file structure
         // If a test fails, this structure might be already created, so delete if first
-        remove_basic_file_structure();
-        create_basic_file_structure().expect("Could not create basic file structure for the test");
+        remove_basic_file_structure(base_path);
+        create_basic_file_structure(base_path)
+            .expect("Could not create basic file structure for the test");
 
         // Copy now to another path
         let from = "./dir_tests";
@@ -249,16 +254,19 @@ mod tests {
         assert!(Path::new("./dir_tests/pruebas/test/second_test.rs").exists(), "New dir hierarchy was not created properly");
 
         // Now, remove the file hierarchy created
-        remove_basic_file_structure();
+        remove_basic_file_structure(base_path);
     }
 
     #[test]
     fn test_sync_dir_ignore_files(){
 
+        let base_path = "test_sync_dir_ignore_files";
+
         // Start creating a basic file structure
         // If a test fails, this structure might be already created, so delete if first
-        remove_basic_file_structure();
-        create_basic_file_structure().expect("Could not create basic file structure for the test");
+        remove_basic_file_structure(base_path);
+        create_basic_file_structure(base_path)
+            .expect("Could not create basic file structure for the test");
 
         // Copy now to another path
         let from = "./dir_tests";
@@ -282,17 +290,20 @@ mod tests {
         assert!(Path::new("./dir_tests/pruebas/test/second_test.rs").exists(), "New dir hierarchy was not created properly");
 
         // Now, remove the file hierarchy created
-        remove_basic_file_structure();
+        remove_basic_file_structure(base_path);
     }
 
 
     #[test]
     fn test_sync_file_base_case(){
 
+        let base_path = "test_sync_file_base_case";
+
         // Start creating a basic file structure
         // If a test fails, this structure might be already created, so delete if first
-        remove_basic_file_structure();
-        create_basic_file_structure().expect("Could not create basic file structure for the test");
+        remove_basic_file_structure(base_path);
+        create_basic_file_structure(base_path)
+            .expect("Could not create basic file structure for the test");
 
         // Sync just a single file
         let from = "./dir_tests/src/first.rs";
@@ -306,7 +317,6 @@ mod tests {
         assert!(Path::new("./dir_tests/pruebas/code/first.rs").exists(), "File was not properly copyed");
 
         // Now, remove the file hierarchy created
-        remove_basic_file_structure();
+        remove_basic_file_structure(base_path);
     }
-
 }
