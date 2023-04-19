@@ -66,19 +66,23 @@ pub fn sync_dir(from: &str, to: &str, ignore_paths: &Vec<String>, remove_files: 
     // Step 1: create the base of the command string
     let mut command_content = format!("rsync -zaP ");
 
-    // Step 2: check if we want to remove files
+    // Step 2: add this flag, so rsync creates the necessary dirs if they don't
+    // exist
+    command_content.push_str("--mkpath ");
+
+    // Step 3: check if we want to remove files
     if remove_files == true{
         command_content.push_str("--delete ");
     }
 
-    // Step 2: add the ignored files
+    // Step 4: add the ignored files
     if ignore_paths.is_empty() == false{
         for excluded_file in ignore_paths{
             command_content.push_str(&format!("--exclude {excluded_file} "));
         }
     }
 
-    // Step 3: specify source and destination
+    // Step 5: specify source and destination
     command_content.push_str(&format!("{from} {to}"));
 
     println!("TODO -- remove me -- command was {command_content}");

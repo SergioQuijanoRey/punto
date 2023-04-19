@@ -141,8 +141,6 @@ mod tests{
         return DirectoriesDescr::new(repo_base.to_string(), system_base.to_string(), dir_blocks);
     }
 
-
-    // TODO -- this test is failing
     #[test]
     fn test_download_basic_case(){
         // Start creating a basic file structure
@@ -151,44 +149,21 @@ mod tests{
         remove_basic_file_structure(base_path);
         create_basic_file_structure(base_path).expect("Could not create basic file structure for the test");
 
-        // TODO -- remove this logging when we fix the test
-        // We show the structure of the generated file system
-        let show_fs_structure_command = SingleCommand::SingleCommand::new(
-            format!("exa -T {}", base_path),
-            false,
-            false,
-        ).expect("Coult not create exa command");
-        let _command_result = show_fs_structure_command.run();
-
         // Now get the basic DirectoriesDescr
         let description = create_basic_dir_description(base_path);
-        println!("TODO -- description is: \n\n{:#?}\n\n", description);
 
         // Get the dir description
-        // TODO -- BUG -- this operation is failing
-        //
-        // TODO -- BUG -- It's failing because the destination parent folder
-        // does not exist
         description.download_from_repo_to_system();
 
-        // TODO -- remove this logging when we fix the test
-        // We show the structure of the file system after applying the operations
-        let show_fs_structure_command = SingleCommand::SingleCommand::new(
-            format!("exa -T {}", base_path),
-            false,
-            false,
-        ).expect("Coult not create exa command");
-        let _command_result = show_fs_structure_command.run();
+        // Make some checks about directories
+        assert!(Path::new(base_path).join("system").exists(), "Directories were not properly downloaded");
+        assert!(Path::new(base_path).join("system/alternative_src").exists(), "Directories were not properly downloaded");
+        assert!(Path::new(base_path).join("system/other_test_place").exists(), "Directories were not properly downloaded");
 
-        // // Make some checks about directories
-        // assert!(Path::new(base_path).join("alternative_src").exists(), "Directories were not properly downloaded");
-        // assert!(Path::new(base_path).join("other_test_place").exists(), "Directories were not properly downloaded");
-
-        // // Now make some checks about files
-        // assert_eq!(Path::new("./dir_tests/system/alternative_src/first.rs").exists(), false, "Ignored file was not ignored");
-        // assert!(Path::new("./dir_tests/system/alternative_src/second.rs").exists(), "Dir sync failed to copy a file");
-        // assert!(Path::new("./dir_tests/system/alternative_src/third.rs").exists(), "Dir sync failed to copy a file");
-        // assert!(Path::new("./dir_tests/system/other_test_place/first_test___.rs").exists(), "File sync failed to make the copy");
-
+        // Now make some checks about files
+        assert_eq!(Path::new(base_path).join("system/alternative_src/first.rs").exists(), false, "Ignored file was not ignored");
+        assert!(Path::new(base_path).join("system/alternative_src/second.rs").exists(), "Dir sync failed to copy a file");
+        assert!(Path::new(base_path).join("system/alternative_src/third.rs").exists(), "Dir sync failed to copy a file");
+        assert!(Path::new(base_path).join("system/other_test_place/first_test___.rs").exists(), "File sync failed to make the copy");
     }
 }
