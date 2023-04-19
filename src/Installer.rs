@@ -69,14 +69,17 @@ mod test_installer_section{
     use super::InstallerSection;
 
 
+    // TODO -- design -- test this without actually installing packages
+    // TODO -- this test depends on the linux distro that is run. For example,
+    // now we can only run it on NixOS
     #[test]
     pub fn test_failed_packages_are_properly_tracked() -> Result<(), String>{
         // Build a InstallerSection with some non-existing packages
-        let sudo = true;
+        let sudo = false;
         let section = InstallerSection::new(
             "Install some packages".to_string(),
-            "pacman -S --noconfirm".to_string(),
-            vec!["git".to_string(), "thispackagedoesnotexist".to_string(), "exa".to_string()],
+            "nix-env -iA".to_string(),
+            vec!["nixos.git".to_string(), "thispackagedoesnotexist".to_string(), "nixos.exa".to_string()],
             sudo,
         );
 
