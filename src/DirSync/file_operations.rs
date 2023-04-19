@@ -201,7 +201,7 @@ mod tests {
 
     /// A lot of tests need to work in top a file hierarchy structure
     /// So with this function we can create a basic structure
-    /// NOTE: do not share root folder, because tests might be run in parallel
+    /// NOTE: do not share root folder, because tests might run in parallel
     fn create_basic_file_structure(base_path: &str) -> Option<()>{
         fs::create_dir(Path::new(base_path)).ok()?;
         fs::create_dir(Path::new(base_path).join("src")).ok()?;
