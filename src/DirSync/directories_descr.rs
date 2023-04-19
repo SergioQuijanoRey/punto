@@ -81,31 +81,40 @@ mod tests{
 
     /// A lot of tests need to work in top a file hierarchy structure
     /// So with this function we can create a basic structure
-    fn create_basic_file_structure() -> Option<()>{
-        fs::create_dir("./dir_tests").ok()?;
-        fs::create_dir("./dir_tests/src").ok()?;
-        fs::create_dir("./dir_tests/test").ok()?;
-        fs::File::create("./dir_tests/src/first.rs").ok()?;
-        fs::File::create("./dir_tests/src/second.rs").ok()?;
-        fs::File::create("./dir_tests/src/third.rs").ok()?;
-        fs::File::create("./dir_tests/test/first_test.rs").ok()?;
-        fs::File::create("./dir_tests/test/second_test.rs").ok()?;
+    fn create_basic_file_structure(base_path: &str) -> Option<()>{
+        fs::create_dir(Path::new(base_path)).ok()?;
+        fs::create_dir(Path::new(base_path).join("src")).ok()?;
+        fs::create_dir(Path::new(base_path).join("test")).ok()?;
+        fs::File::create(Path::new(base_path).join("src/first.rs")).ok()?;
+        fs::File::create(Path::new(base_path).join("src/second.rs")).ok()?;
+        fs::File::create(Path::new(base_path).join("src/third.rs")).ok()?;
+        fs::File::create(Path::new(base_path).join("test/first_test.rs")).ok()?;
+        fs::File::create(Path::new(base_path).join("test/second_test.rs")).ok()?;
 
         return Some(());
     }
 
     /// Remove the basic file structure created with `create_basic_file_structure`
-    fn remove_basic_file_structure() -> Option<()>{
-        fs::remove_dir_all("./dir_tests").ok()?;
+    fn remove_basic_file_structure(base_path: &str) -> Option<()>{
+        fs::remove_dir_all(base_path).ok()?;
 
         return Some(());
     }
 
-    /// Also, create a basic structure to work with
-    fn create_basic_structure() -> DirectoriesDescr{
+    /// Also, create a basic DirectoriesDescr to work with
+    /// Instead of reading from a `.yaml` test file, we create that structure
+    /// manually
+    /// NOTE: do not share root folder, because some tests might run in parallel
+    fn create_basic_dir_description(base_path: &str) -> DirectoriesDescr{
 
-        let repo_base = "./dir_tests";
-        let system_base = "./dir_tests/system";
+        let repo_base = base_path;
+
+        // Binding to not mess with the lifetimes
+        let binding = Path::new(repo_base)
+            .join("system");
+        let system_base = binding
+            .to_str()
+            .expect("Could not convert path object to string");
 
         // Create a bunch of DirBlocks
         // Put the parameters of each dir block in vectors, so creating more than one dir block
@@ -133,15 +142,17 @@ mod tests{
     }
 
 
+    // TODO -- this test is failing
     #[test]
     fn test_download_basic_case(){
         // Start creating a basic file structure
         // If a test fails, this structure might be already created, so delete if first
-        remove_basic_file_structure();
-        create_basic_file_structure().expect("Could not create basic file structure for the test");
+        let base_path = "test_download_basic_case";
+        remove_basic_file_structure(base_path);
+        create_basic_file_structure(base_path).expect("Could not create basic file structure for the test");
 
         // Now get the basic DirectoriesDescr
-        let description = create_basic_structure();
+        let description = create_basic_dir_description(base_path);
 
         // Download the description
         description.download_from_repo_to_system();
