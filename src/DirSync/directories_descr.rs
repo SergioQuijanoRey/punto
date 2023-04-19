@@ -137,7 +137,13 @@ mod tests{
             dir_blocks.push(new_dir_block);
         }
 
-        return DirectoriesDescr::new(repo_base.to_string(), system_base.to_string(), dir_blocks);
+        // TODO -- remove this guarding rails
+        // TODO -- BUG -- this asssertion is failing!
+        assert!(dir_blocks.len() == 2, "Creating basic description is wrong!");
+
+        let descrp = DirectoriesDescr::new(repo_base.to_string(), system_base.to_string(), dir_blocks);
+        println!("TODO -- description is \n{:#?}\n\n", descrp);
+        return descrp;
 
     }
 
