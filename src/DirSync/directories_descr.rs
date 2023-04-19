@@ -126,7 +126,7 @@ mod tests{
 
         // Use vector of parameters to construct the DirBlocks
         let mut dir_blocks = vec![];
-        for i in 1..repo_paths.len(){
+        for i in 0..repo_paths.len(){
 
             let repo_path = repo_paths[i].to_string();
             let system_path = system_paths[i].to_string();
