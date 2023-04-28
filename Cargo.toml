@@ -8,4 +8,6 @@ edition = "2018"
 yaml-rust = "0.4.5"
 clap = "2"
 dircpy = "0.3.7"
+
 lib_commands = { path = "./lib_commands" }
+lib_fileops = { path = "./lib_fileops" }

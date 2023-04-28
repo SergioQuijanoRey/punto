@@ -161,10 +161,11 @@ mod tests {
     use std::fs;
     use std::path::Path;
 
-    use crate::DirSync::file_operations::{
+    use super::{
         add_last_slash_to_path,
         join_two_paths,
-        sync_dir, sync_file
+        sync_dir,
+        sync_file
     };
 
     #[test]

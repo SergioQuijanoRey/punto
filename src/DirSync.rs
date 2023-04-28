@@ -7,7 +7,6 @@ use crate::YamlProcessor;
 pub mod directories_descr;
 pub mod dir_block;
 pub mod dir_file_type;
-pub mod file_operations;
 
 use crate::DirSync::directories_descr::DirectoriesDescr;
 use crate::DirSync::dir_block::DirBlock;
