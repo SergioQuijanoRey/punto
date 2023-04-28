@@ -60,6 +60,7 @@ pub fn handle_shell_command(yaml_file: &str) {
     }
 }
 
+/// TODO -- DESIGN -- parsing files seems should go to different modules
 /// Given a yaml file path, it returns the CommandOptions vector which are used to launch a command
 fn parse_yaml_command(file_path: &str) -> Vec<CommandBlock> {
 
