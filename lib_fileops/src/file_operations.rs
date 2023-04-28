@@ -227,6 +227,7 @@ mod tests {
         return Some(());
     }
 
+    // TODO -- BUG -- this test is failing
     #[test]
     fn test_sync_base_case_dirs(){
 
@@ -302,6 +303,7 @@ mod tests {
     }
 
 
+    // TODO -- BUG -- This is failing
     #[test]
     fn test_sync_file_base_case(){
 
