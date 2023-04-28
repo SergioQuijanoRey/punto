@@ -69,6 +69,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "lib_commands"
+version = "0.1.0"
+
+[[package]]
+name = "lib_fileops"
+version = "0.1.0"
+dependencies = [
+ "lib_commands",
+]
+
+[[package]]
 name = "libc"
 version = "0.2.86"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -95,6 +106,8 @@ version = "0.1.0"
 dependencies = [
  "clap",
  "dircpy",
+ "lib_commands",
+ "lib_fileops",
  "yaml-rust",
 ]
 

@@ -11,3 +11,4 @@ default:
 clean:
     - {{RM_COMMAND}} ./test_download_basic_case
     - {{RM_COMMAND}} ./dir_tests
+    - {{RM_COMMAND}} ./test_*

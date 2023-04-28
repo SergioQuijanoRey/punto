@@ -3,7 +3,7 @@ use std::{fs, path::Path};
 /// Module to implement basic file operations such as copy files, copy dirs,
 /// create dirs, ...
 
-use crate::SingleCommand;
+use lib_commands::SingleCommand;
 
 #[derive(Debug)]
 pub enum FileOperationError{
@@ -89,7 +89,7 @@ pub fn sync_dir(from: &str, to: &str, ignore_paths: &Vec<String>, remove_files: 
 
     let quiet = false;
     let sudo = false;
-    let command = SingleCommand::SingleCommand::new(
+    let command = SingleCommand::new(
         command_content, quiet, sudo,
     );
 
@@ -161,10 +161,11 @@ mod tests {
     use std::fs;
     use std::path::Path;
 
-    use crate::DirSync::file_operations::{
+    use super::{
         add_last_slash_to_path,
         join_two_paths,
-        sync_dir, sync_file
+        sync_dir,
+        sync_file
     };
 
     #[test]

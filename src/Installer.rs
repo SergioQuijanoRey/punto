@@ -1,7 +1,6 @@
-use crate::CommandProcessor;
-use crate::SingleCommand;
 use crate::YamlProcessor;
 use std::process::exit;
+use lib_commands::SingleCommand;
 
 /// Represents a section of a installer .yaml specification
 #[derive(Debug)]
@@ -44,7 +43,7 @@ impl InstallerSection {
             let quiet = false;
 
             let command_string = format!("{} {}", self.install_command, package);
-            let command = SingleCommand::SingleCommand::new(command_string, quiet, self.sudo).expect("Install command failed to build");
+            let command = SingleCommand::new(command_string, quiet, self.sudo).expect("Install command failed to build");
 
             // Run the command. If it fails, add to the list of failed commands
             match command.run(){

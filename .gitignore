@@ -1,1 +1,14 @@
 /target/
+/dir_tests/main.rs
+/lib_commands/target/
+/lib_fileops/target/
+/lib_fileops/test_sync_base_case_dirs/src/first.rs
+/lib_fileops/test_sync_base_case_dirs/src/second.rs
+/lib_fileops/test_sync_base_case_dirs/src/third.rs
+/lib_fileops/test_sync_base_case_dirs/test/first_test.rs
+/lib_fileops/test_sync_base_case_dirs/test/second_test.rs
+/lib_fileops/test_sync_file_base_case/src/first.rs
+/lib_fileops/test_sync_file_base_case/src/second.rs
+/lib_fileops/test_sync_file_base_case/src/third.rs
+/lib_fileops/test_sync_file_base_case/test/first_test.rs
+/lib_fileops/test_sync_file_base_case/test/second_test.rs
