@@ -1,10 +1,7 @@
 // TODO -- split in different modules, file too large
 
-use std::{collections::HashMap, process::exit};
-use std::env;
-
-use crate::{YamlProcessor};
-
+use std::process::exit;
+use crate::YamlProcessor;
 use lib_commands::{SingleCommand, SingleCommandError};
 
 /// Represent a group of commands to execute in sequence

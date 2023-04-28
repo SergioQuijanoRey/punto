@@ -78,7 +78,6 @@ mod tests{
 
     use super::DirectoriesDescr;
     use crate::DirSync::{DirBlock, dir_file_type::DirFileType};
-    use lib_commands::SingleCommand;
 
     /// A lot of tests need to work in top a file hierarchy structure
     /// So with this function we can create a basic structure
