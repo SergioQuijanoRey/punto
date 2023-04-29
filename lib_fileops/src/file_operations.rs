@@ -219,7 +219,6 @@ mod tests {
         return Some(());
     }
 
-    // TODO -- BUG -- this test is failing
     #[test]
     fn test_sync_base_case_dirs(){
 
@@ -308,15 +307,15 @@ mod tests {
             .expect("Could not create basic file structure for the test");
 
         // Sync just a single file
-        let from = "./dir_tests/src/first.rs";
-        let to = "./dir_tests/pruebas/code/first.rs";
-        sync_file(from, to).expect("Copy operation failed to run");
+        let from = Path::new(base_path).join("src").join("first.rs");
+        let to = Path::new(base_path).join("pruebas/code").join("first.rs");
+        sync_file(from.to_str().unwrap(), to.to_str().unwrap()).expect("Copy operation failed to run");
 
         // Check that the dir for the file was created
-        assert!(Path::new("./dir_tests/pruebas/code").exists(), "Dir for the new file was not created");
+        assert!(Path::new(base_path).join("pruebas/code").exists(), "Dir for the new file was not created");
 
         // Now check that the file itself exists
-        assert!(Path::new("./dir_tests/pruebas/code/first.rs").exists(), "File was not properly copyed");
+        assert!(to.exists(), "File was not properly copyed");
 
         // Now, remove the file hierarchy created
         remove_basic_file_structure(base_path);
