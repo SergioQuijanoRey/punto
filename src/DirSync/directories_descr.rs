@@ -1,5 +1,5 @@
 use crate::DirSync::dir_file_type::DirFileType;
-use crate::DirSync::DirBlock;
+use crate::DirSync::dir_block::DirBlock;
 use lib_fileops::{join_two_paths, sync_dir, sync_file};
 
 /// Represent the directories yaml description
@@ -77,7 +77,7 @@ mod tests{
     use std::{path::Path, fs};
 
     use super::DirectoriesDescr;
-    use crate::DirSync::{DirBlock, dir_file_type::DirFileType};
+    use crate::DirSync::{dir_block::DirBlock, dir_file_type::DirFileType};
 
     /// A lot of tests need to work in top a file hierarchy structure
     /// So with this function we can create a basic structure
