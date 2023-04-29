@@ -293,8 +293,6 @@ mod tests {
         remove_basic_file_structure(base_path);
     }
 
-
-    // TODO -- BUG -- This is failing
     #[test]
     fn test_sync_file_base_case(){
 
