@@ -139,9 +139,10 @@ pub fn sync_file(from: &str, to: &str) -> Result<(), FileOperationError>{
 ///
 /// # Examples
 /// ```
+/// use lib_fileops::join_two_paths;
 /// let joined = join_two_paths("first_part", "second_part");
 /// let expected = "first_part/second_part";
-/// assert_eq!(expected, joined);
+/// assert_eq!(expected, joined, "Join two paths func did not work properly");
 /// ```
 pub fn join_two_paths(first: &str, second: &str) -> String{
     return std::path::Path::new(first).join(second).to_str().unwrap().to_string()
