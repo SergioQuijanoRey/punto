@@ -164,7 +164,7 @@ mod single_command_test{
     pub fn test_failing_command_in_runtime() -> Result<(), String>{
         // Build and run a failing command
         let command = SingleCommand::new(
-            "ls -lah /dev/thisdirdoesnotexist".to_string(), false, true
+            "ls -lah /dev/thisdirdoesnotexist".to_string(), false, false
         ).expect("This command doesn't have sudo at the start");
 
         let result = command.run();
