@@ -1,4 +1,5 @@
 use std::{process::{Command, Stdio}, collections::HashMap, env};
+use thiserror::Error;
 
 /// Represents a shell command to execute
 #[derive(Debug)]
@@ -15,19 +16,22 @@ pub struct SingleCommand{
 }
 
 /// Enum to represent all kind of errors that could happen
-#[derive(Debug)]
+#[derive(Error, Debug)]
 pub enum SingleCommandError{
 
     /// Error that is returned when the command string has sudo
     /// If sudo is wanted to be used, it has to be set in the sudo bool field
+    #[error("Sudo must be specified as a parameter, not adding them in the command string")]
     SudoAtTheStart,
 
     /// Error that is returned when the program does not exist. Thus, this error
     /// raises when we try to create a command with this unexisting program
+    #[error("The program {0} does not exist")]
     ProgramDoesNotExist(String),
 
     /// Error that is returned when the program fails in runtime
     /// That is to say, when the program runs but in the middle of execution fails
+    #[error("Command failed during execution, with error {0}")]
     RuntimeFailure(String),
 }
 

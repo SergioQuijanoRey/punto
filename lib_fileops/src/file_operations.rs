@@ -1,19 +1,10 @@
 use std::{fs, path::Path};
+use anyhow::Context;
 
 /// Module to implement basic file operations such as copy files, copy dirs,
 /// create dirs, ...
 
 use lib_commands::SingleCommand;
-
-#[derive(Debug)]
-pub enum FileOperationError{
-
-    // Error ocurred while copying one dir to another dir
-    SyncDirError(String),
-
-    /// Copying one file to another place failed
-    FileCopyError(String),
-}
 
 /// Gets a path and adds a last "/" if it is not present
 /// This is needed for the rsync command
@@ -43,7 +34,7 @@ fn add_last_slash_to_path(path: &str) -> String{
 /// in `to` path will be removed
 ///
 // TODO -- we're using rsync to do this, move that to native rust code
-pub fn sync_dir(from: &str, to: &str, ignore_paths: &Vec<String>, remove_files: bool) -> Result<(), FileOperationError>{
+pub fn sync_dir(from: &str, to: &str, ignore_paths: &Vec<String>, remove_files: bool) -> anyhow::Result<()>{
 
     // For using rsync, last char in the paths must be /
     // So make some checks and do the conversion if they fail
@@ -76,63 +67,34 @@ pub fn sync_dir(from: &str, to: &str, ignore_paths: &Vec<String>, remove_files: 
     // Step 5: specify source and destination
     command_content.push_str(&format!("{from} {to}"));
 
-    println!("TODO -- remove me -- command was {command_content}");
-
     let quiet = false;
     let sudo = false;
     let command = SingleCommand::new(
         command_content, quiet, sudo,
-    );
-
-    // Check that the command is valid
-    let command = match command{
-        Ok(result) => result,
-        Err(err) => return Err(FileOperationError::SyncDirError(format!("rsync command creation failed: {err:?}"))),
-    };
+    ).context("Could not create the command to use rsync")?;
 
     // Run the command
-    let command_result = command.run();
-
-    // Check for errors
-    // Translate SingleCommandError to a higher level of abstraction error
-    let operation_result = match command_result {
-        Ok(_) => Ok(()),
-        Err(err) => Err(FileOperationError::SyncDirError(format!("Rsync error was {err:?}"))),
-    };
-
-    return operation_result;
+    command.run().context("Rsync command failed at runtime")?;
+    return Ok(());
 }
 
 /// Copies one file to another location
 /// Creates the `to` folder if it does not exist
-pub fn sync_file(from: &str, to: &str) -> Result<(), FileOperationError>{
+pub fn sync_file(from: &str, to: &str) -> anyhow::Result<()> {
 
-    // Create the path to store the file if it does not exist
-    let parent_dir = match Path::new(to).parent() {
-        Some(path) => path,
-        None => return Err(FileOperationError::FileCopyError("Could not retreive parent of dest file".to_string())),
-    };
+    // Get the path to the parent dir of `to` file
+    let parent_dir = Path::new(to).parent()
+        .with_context(|| format!("Could not get the path of the parent dir of dest. file {}", to))?
+        .to_str().with_context(|| format!("Could not get the string of the parent dir of dest file {}", to))?;
 
-    // Now we get the string from the parent object
-    let parent_dir = match parent_dir.to_str(){
-        Some(path) => path,
-        None => return Err(FileOperationError::FileCopyError("Could not get the string from the Path object".to_string())),
-    };
+    // Create the dir for the new file
+    fs::create_dir_all(parent_dir)
+        .with_context(|| format!("Could not create dir {} to store new file", parent_dir))?;
 
-    let create_dir_result = fs::create_dir_all(parent_dir);
-    match create_dir_result{
-        Ok(_) => (),
-        Err(err) => return Err(FileOperationError::FileCopyError(format!("Could not create dirs for the new file, err was: {err}"))),
-    }
+    // Copy the file to the new dir
+    fs::copy(from, to).context("Failed to copy file to new destination")?;
 
-    // Copy the file
-    let result = fs::copy(from, to);
-
-    // Return the result of the copy operation
-    return match result{
-        Ok(_) => return Ok(()),
-        Err(err) => return Err(FileOperationError::FileCopyError(format!("File copy got following error: {err}"))),
-    };
+    return Ok(());
 }
 
 /// Joins two paths given in strings
