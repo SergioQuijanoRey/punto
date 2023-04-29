@@ -18,18 +18,9 @@ pub enum FileOperationError{
 /// Gets a path and adds a last "/" if it is not present
 /// This is needed for the rsync command
 ///
-/// # Examples
-/// ```
-/// # some/path -> some/path/
-/// let original_path = "some/path";
-/// let transformted_path = add_last_slash_to_path(original_path);
-/// assert_eq!(transformted_path, "some/path/", "add_last_slash_to_path did not added last slash");
-///
-/// # other/path/ -> do nothing
-/// let original_path = "some/path/";
-/// let transformted_path = add_last_slash_to_path(original_path);
-/// assert_eq!(transformted_path, "some/path/", "add_last_slash_to_path changed a path that was correct at first");
-/// ```
+/// For example:
+/// some/path -> some/path/
+/// other/path/ -> do nothing
 fn add_last_slash_to_path(path: &str) -> String{
     let last_char = path.chars().last().unwrap();
 
