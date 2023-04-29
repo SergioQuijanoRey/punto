@@ -240,24 +240,24 @@ mod tests {
             .expect("Could not create basic file structure for the test");
 
         // Copy now to another path
-        let from = "./dir_tests";
-        let to = "./dir_tests/pruebas";
+        let from = base_path;
+        let to = Path::new(base_path).join("pruebas");
         let ignore_files = vec![];
         let remove_files = false;
-        sync_dir(from, to, &ignore_files, remove_files).expect("Copy operation failed to run");
+        sync_dir(from, to.to_str().unwrap(), &ignore_files, remove_files).expect("Copy operation failed to run");
 
         // Make some checks about the dirs
-        assert!(Path::new("./dir_tests/pruebas/").exists(), "New dir hierarchy was not created properly");
-        assert!(Path::new("./dir_tests/pruebas/src").exists(), "New dir hierarchy was not created properly");
-        assert!(Path::new("./dir_tests/pruebas/test").exists(), "New dir hierarchy was not created properly");
+        assert!(Path::new(base_path).join("pruebas/").exists(), "New dir hierarchy was not created properly");
+        assert!(Path::new(base_path).join("pruebas/src").exists(), "New dir hierarchy was not created properly");
+        assert!(Path::new(base_path).join("pruebas/test").exists(), "New dir hierarchy was not created properly");
 
         // Now check the paths
-        assert!(Path::new("./dir_tests/pruebas/src/first.rs").exists(), "New dir hierarchy was not created properly");
-        assert!(Path::new("./dir_tests/pruebas/src/second.rs").exists(), "New dir hierarchy was not created properly");
-        assert!(Path::new("./dir_tests/pruebas/src/third.rs").exists(), "New dir hierarchy was not created properly");
+        assert!(Path::new(base_path).join("pruebas/src/first.rs").exists(), "New dir hierarchy was not created properly");
+        assert!(Path::new(base_path).join("pruebas/src/second.rs").exists(), "New dir hierarchy was not created properly");
+        assert!(Path::new(base_path).join("pruebas/src/third.rs").exists(), "New dir hierarchy was not created properly");
 
-        assert!(Path::new("./dir_tests/pruebas/test/first_test.rs").exists(), "New dir hierarchy was not created properly");
-        assert!(Path::new("./dir_tests/pruebas/test/second_test.rs").exists(), "New dir hierarchy was not created properly");
+        assert!(Path::new(base_path).join("pruebas/test/first_test.rs").exists(), "New dir hierarchy was not created properly");
+        assert!(Path::new(base_path).join("pruebas/test/second_test.rs").exists(), "New dir hierarchy was not created properly");
 
         // Now, remove the file hierarchy created
         remove_basic_file_structure(base_path);
