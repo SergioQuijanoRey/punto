@@ -42,6 +42,9 @@
                 # For building the project
                 pkgs.cargo
 
+                # LSP
+                pkgs.rust-analyzer
+
             ];
 
             shellHook = ''

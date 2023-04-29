@@ -15,7 +15,8 @@ pub struct DirBlock {
     sync_type: DirFileType,
 
     /// Files to ignore
-    /// TODO -- BUG -- now we are deleting them, not ignoring them
+    /// Should be relative to `repo_path`
+    /// For example, 'file.txt' instead of '/path/to/repo/ignore_files'
     ignore_files: Vec<String>,
 }
 

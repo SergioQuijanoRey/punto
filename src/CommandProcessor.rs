@@ -1,9 +1,8 @@
 // TODO -- split in different modules, file too large
 
-use crate::{YamlProcessor, SingleCommand};
-use std::{collections::HashMap, process::exit};
-use std::env;
-use crate::SingleCommand::{SingleCommandError};
+use std::process::exit;
+use crate::YamlProcessor;
+use lib_commands::{SingleCommand, SingleCommandError};
 
 /// Represent a group of commands to execute in sequence
 /// If one command fails, the rest of the commands won't be executed
@@ -12,7 +11,7 @@ use crate::SingleCommand::{SingleCommandError};
 pub struct CommandBlock {
 
     /// The sequence of commands
-    commands: Vec<SingleCommand::SingleCommand>,
+    commands: Vec<SingleCommand>,
 
     /// To describe what is the purpose of this block of commands
     description: String,
@@ -21,7 +20,7 @@ pub struct CommandBlock {
 
 impl CommandBlock {
     /// Creates a new CommandBlock
-    pub fn new(commands: Vec<SingleCommand::SingleCommand>, description: String) -> Self {
+    pub fn new(commands: Vec<SingleCommand>, description: String) -> Self {
         return CommandBlock {
             commands,
             description,
@@ -58,6 +57,7 @@ pub fn handle_shell_command(yaml_file: &str) {
     }
 }
 
+/// TODO -- DESIGN -- parsing files seems should go to different modules
 /// Given a yaml file path, it returns the CommandOptions vector which are used to launch a command
 fn parse_yaml_command(file_path: &str) -> Vec<CommandBlock> {
 
@@ -96,9 +96,9 @@ fn parse_yaml_command(file_path: &str) -> Vec<CommandBlock> {
             .collect();
 
         // Create a vector of single commands
-        let commands: Vec<SingleCommand::SingleCommand> = vector_of_commands
+        let commands: Vec<SingleCommand> = vector_of_commands
             .into_iter()
-            .map(|command_string| SingleCommand::SingleCommand::new(command_string, quiet, sudo).unwrap())
+            .map(|command_string| SingleCommand::new(command_string, quiet, sudo).unwrap())
             .collect();
 
         // Now create the current command block

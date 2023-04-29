@@ -1,6 +1,6 @@
-use crate::DirSync::file_operations::{join_two_paths, sync_dir, sync_file};
 use crate::DirSync::dir_file_type::DirFileType;
 use crate::DirSync::DirBlock;
+use lib_fileops::{join_two_paths, sync_dir, sync_file};
 
 /// Represent the directories yaml description
 /// This representation is based on a set of dirblocks
@@ -20,9 +20,7 @@ impl DirectoriesDescr {
 
     /// Generates a new struct
     pub fn new(repo_base: String, system_base: String, dir_blocks: Vec<DirBlock>) -> Self {
-        // Create and check the new struct
-        let new_struct = Self{repo_base, system_base, dir_blocks};
-        return new_struct;
+        return Self{repo_base, system_base, dir_blocks};
     }
 
     /// Appends a new DirBlock to the struct
@@ -32,6 +30,7 @@ impl DirectoriesDescr {
 
     /// Downloads files from repo to the system
     /// Download in sync mode: can delete files in system that are not present in repo
+    // TODO -- test -- need to add some tests
     pub fn download_from_repo_to_system(&self) {
         for dir_block in &self.dir_blocks {
 
@@ -42,15 +41,17 @@ impl DirectoriesDescr {
 
             let ignore_files = &dir_block.ignore_files();
 
+            // TODO -- BUG -- results must be handled
             match &dir_block.sync_type() {
-                DirFileType::File => sync_file(from, to),
-                DirFileType::Dir => sync_dir(from, to, ignore_files),
-            }
+                DirFileType::File => sync_file(from, to).expect("Failed to sync file"),
+                DirFileType::Dir => sync_dir(from, to, ignore_files, false).expect("Failed to sync dir"),
+            };
         }
     }
 
     /// Uploads files from system to the repo
     /// Upload in sync mode: can delete files in repo that are not present in system
+    // TODO -- TEST -- need to add some tests
     pub fn upload_from_system_to_repo(&self) {
         for dir_block in &self.dir_blocks {
 
@@ -61,10 +62,108 @@ impl DirectoriesDescr {
 
             let ignore_files = &dir_block.ignore_files();
 
+            // TODO -- BUG -- results must be handled
             match &dir_block.sync_type() {
-                DirFileType::File => sync_file(from, to),
-                DirFileType::Dir => sync_dir(from, to, ignore_files),
-            }
+                DirFileType::File => sync_file(from, to).expect("Failed to sync file"),
+                DirFileType::Dir => sync_dir(from, to, ignore_files, false).expect("Failed to sync dir"),
+            };
         }
+    }
+}
+
+#[cfg(test)]
+mod tests{
+
+    use std::{path::Path, fs};
+
+    use super::DirectoriesDescr;
+    use crate::DirSync::{DirBlock, dir_file_type::DirFileType};
+
+    /// A lot of tests need to work in top a file hierarchy structure
+    /// So with this function we can create a basic structure
+    fn create_basic_file_structure(base_path: &str) -> Option<()>{
+        fs::create_dir(Path::new(base_path)).ok()?;
+        fs::create_dir(Path::new(base_path).join("src")).ok()?;
+        fs::create_dir(Path::new(base_path).join("test")).ok()?;
+        fs::File::create(Path::new(base_path).join("src/first.rs")).ok()?;
+        fs::File::create(Path::new(base_path).join("src/second.rs")).ok()?;
+        fs::File::create(Path::new(base_path).join("src/third.rs")).ok()?;
+        fs::File::create(Path::new(base_path).join("test/first_test.rs")).ok()?;
+        fs::File::create(Path::new(base_path).join("test/second_test.rs")).ok()?;
+
+        return Some(());
+    }
+
+    /// Remove the basic file structure created with `create_basic_file_structure`
+    fn remove_basic_file_structure(base_path: &str) -> Option<()>{
+        fs::remove_dir_all(base_path).ok()?;
+
+        return Some(());
+    }
+
+    /// Also, create a basic DirectoriesDescr to work with
+    /// Instead of reading from a `.yaml` test file, we create that structure
+    /// manually
+    /// NOTE: do not share root folder, because some tests might run in parallel
+    fn create_basic_dir_description(base_path: &str) -> DirectoriesDescr{
+
+        let repo_base = base_path;
+
+        // Binding to not mess with the lifetimes
+        let binding = Path::new(repo_base)
+            .join("system");
+        let system_base = binding
+            .to_str()
+            .expect("Could not convert path object to string");
+
+        // Create a bunch of DirBlocks
+        // Put the parameters of each dir block in vectors, so creating more than one dir block
+        // is easier
+        let repo_paths = vec!["src", "test/first_test.rs"];
+        let system_paths = vec!["alternative_src", "other_test_place/first_test___.rs"];
+        let sync_types = vec![DirFileType::Dir, DirFileType::File];
+        let ignored_files = vec![vec!["first.rs".to_string()], vec![]];
+
+        // Use vector of parameters to construct the DirBlocks
+        let mut dir_blocks = vec![];
+        for i in 0..repo_paths.len(){
+
+            let repo_path = repo_paths[i].to_string();
+            let system_path = system_paths[i].to_string();
+            let sync_type = sync_types[i].clone();
+            let curr_ignored_files = ignored_files[i].clone();
+
+            // Create the dir block with the current data
+            let new_dir_block = DirBlock::new(repo_path, system_path, sync_type, curr_ignored_files);
+            dir_blocks.push(new_dir_block);
+        }
+
+        return DirectoriesDescr::new(repo_base.to_string(), system_base.to_string(), dir_blocks);
+    }
+
+    #[test]
+    fn test_download_basic_case(){
+        // Start creating a basic file structure
+        // If a test fails, this structure might be already created, so delete if first
+        let base_path = "./test_download_basic_case";
+        remove_basic_file_structure(base_path);
+        create_basic_file_structure(base_path).expect("Could not create basic file structure for the test");
+
+        // Now get the basic DirectoriesDescr
+        let description = create_basic_dir_description(base_path);
+
+        // Get the dir description
+        description.download_from_repo_to_system();
+
+        // Make some checks about directories
+        assert!(Path::new(base_path).join("system").exists(), "Directories were not properly downloaded");
+        assert!(Path::new(base_path).join("system/alternative_src").exists(), "Directories were not properly downloaded");
+        assert!(Path::new(base_path).join("system/other_test_place").exists(), "Directories were not properly downloaded");
+
+        // Now make some checks about files
+        assert_eq!(Path::new(base_path).join("system/alternative_src/first.rs").exists(), false, "Ignored file was not ignored");
+        assert!(Path::new(base_path).join("system/alternative_src/second.rs").exists(), "Dir sync failed to copy a file");
+        assert!(Path::new(base_path).join("system/alternative_src/third.rs").exists(), "Dir sync failed to copy a file");
+        assert!(Path::new(base_path).join("system/other_test_place/first_test___.rs").exists(), "File sync failed to make the copy");
     }
 }
