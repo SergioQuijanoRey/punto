@@ -107,7 +107,45 @@ pub fn sync_file(from: &str, to: &str) -> anyhow::Result<()> {
 /// assert_eq!(expected, joined, "Join two paths func did not work properly");
 /// ```
 pub fn join_two_paths(first: &str, second: &str) -> String{
-    return std::path::Path::new(first).join(second).to_str().unwrap().to_string()
+    let second_sanitized = sanitize_relative_path(second);
+    let joined_path = std::path::Path::new(first).join(second_sanitized).to_str().unwrap().to_string();
+    return joined_path;
+}
+
+/// Relative paths that are stored in a string in the form of "./something" are
+/// dangerous. Some functions fail when passing relative paths like that
+/// So here we sanitize that relative paths
+///
+/// Also, joining two paths in the form of "/something" "/other" is problematic,
+/// so we also handle that case
+///
+/// # Examples
+///
+/// ```
+/// use super::sanitize_relative_path;
+///
+/// let computed = sanitize_relative_path("./some/rel/path");
+/// let expected = "some/rel/path";
+/// assert_eq!(expected, computed, "Relative path sanitizer did not work well");
+///
+/// let computed = sanitize_relative_path("/some/rel/path");
+/// let expected = "some/rel/path";
+/// assert_eq!(expected, computed, "Relative path sanitizer did not work well");
+/// ```
+pub fn sanitize_relative_path(rel_path: &str) -> String {
+
+    if &rel_path[0..1] == "/" {
+        let sanitized: &str = &rel_path[1..rel_path.len()];
+        return sanitized.to_string();
+    }
+
+    if &rel_path[0..2] == "./" {
+        let sanitized: &str = &rel_path[2..rel_path.len()];
+        return sanitized.to_string();
+
+    }
+
+    return rel_path.to_string();
 }
 
 #[cfg(test)]
@@ -119,7 +157,8 @@ mod tests {
         add_last_slash_to_path,
         join_two_paths,
         sync_dir,
-        sync_file
+        sync_file,
+        sanitize_relative_path,
     };
 
     #[test]
@@ -163,6 +202,18 @@ mod tests {
         let original_path = "some/path/";
         let transformted_path = add_last_slash_to_path(original_path);
         assert_eq!(transformted_path, "some/path/", "add_last_slash_to_path changed a path that was correct at first");
+    }
+
+    #[test]
+    fn test_sanitizer_works() {
+
+        let computed = sanitize_relative_path("./some/rel/path");
+        let expected = "some/rel/path";
+        assert_eq!(expected, computed, "Relative path sanitizer did not work well");
+
+        let computed = sanitize_relative_path("/some/rel/path");
+        let expected = "some/rel/path";
+        assert_eq!(expected, computed, "Relative path sanitizer did not work well");
     }
 
     /// A lot of tests need to work in top a file hierarchy structure
