@@ -45,6 +45,8 @@
                 # LSP
                 pkgs.rust-analyzer
 
+                # Dir sync is done using underlying rsync
+                pkgs.rsync
             ];
 
             shellHook = ''
