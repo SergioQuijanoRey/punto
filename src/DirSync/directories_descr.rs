@@ -1,6 +1,7 @@
 use crate::DirSync::dir_file_type::DirFileType;
 use crate::DirSync::dir_block::DirBlock;
 use lib_fileops::{join_two_paths, sync_dir, sync_file};
+use anyhow::Context;
 
 /// Represent the directories yaml description
 /// This representation is based on a set of dirblocks
@@ -41,10 +42,14 @@ impl DirectoriesDescr {
 
             let ignore_files = &dir_block.ignore_files();
 
-            // TODO -- BUG -- results must be handled
+            // TODO -- DESIGN -- should this function return an error?
             match &dir_block.sync_type() {
-                DirFileType::File => sync_file(from, to).expect("Failed to sync file"),
-                DirFileType::Dir => sync_dir(from, to, ignore_files, false).expect("Failed to sync dir"),
+                DirFileType::File => sync_file(from, to)
+                    .context(format!("Could not sync file from {} to {}", from, to))
+                    .unwrap(),
+                DirFileType::Dir => sync_dir(from, to, ignore_files, false)
+                    .context(format!("Could not sync dir from {} to {}", from, to))
+                    .unwrap(),
             };
         }
     }
@@ -62,10 +67,14 @@ impl DirectoriesDescr {
 
             let ignore_files = &dir_block.ignore_files();
 
-            // TODO -- BUG -- results must be handled
+            // TODO -- DESIGN -- should this function return an error?
             match &dir_block.sync_type() {
-                DirFileType::File => sync_file(from, to).expect("Failed to sync file"),
-                DirFileType::Dir => sync_dir(from, to, ignore_files, false).expect("Failed to sync dir"),
+                DirFileType::File => sync_file(from, to)
+                    .context(format!("Could not sync file from {} to {}", from, to))
+                    .unwrap(),
+                DirFileType::Dir => sync_dir(from, to, ignore_files, false)
+                    .context(format!("Could not sync dir from {} to {}", from, to))
+                    .unwrap(),
             };
         }
     }

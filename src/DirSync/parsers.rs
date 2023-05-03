@@ -17,9 +17,11 @@ pub enum ParsingError {
     #[error("Could not parse file.yaml to a rust object. Parsing error code was {0}")]
     CouldNotParseFile(String),
 
-    #[error("Could not get section {0} from the parsed file")]
-    SectionNotFound(String),
-
+    #[error("Could not get section {section_name} at block {dir_block_name:?} from the parsed file\nCheck that the contents of the block are properly indented")]
+    SectionNotFound{
+        section_name: String,
+        dir_block_name: Option<String>,
+    },
 }
 
 /// All parsers must take a file path and return a `DirectoriesDescr`
@@ -44,17 +46,19 @@ impl ParseDirectories for YamlDirParser {
 
         // We get the repo_base section from the yaml file
         let mut dir_descr = DirectoriesDescr::new(
-            // parsed_contents["repo_base"]
-            //     .as_str()
-            //     .expect("repo_base: <path> is not specified well")
-            //     .to_string(),
             parsed_contents["repo_base"]
                 .as_str()
-                .ok_or(ParsingError::SectionNotFound("repo_base".to_string()))?
+                .ok_or(ParsingError::SectionNotFound{
+                    section_name: "repo_base".to_string(),
+                    dir_block_name: None,
+                })?
                 .to_string(),
             parsed_contents["system_base"]
                 .as_str()
-                .ok_or(ParsingError::SectionNotFound("system_base".to_string()))?
+                .ok_or(ParsingError::SectionNotFound{
+                    section_name: "system_base".to_string(),
+                    dir_block_name: None,
+                })?
                 .to_string(),
             vec![],
         );
@@ -62,11 +66,14 @@ impl ParseDirectories for YamlDirParser {
         // Yaml section of files
         let dir_blocks = parsed_contents["directories"]
             .as_vec()
-            .ok_or(ParsingError::SectionNotFound("directories (vector)".to_string()))?;
+            .ok_or(ParsingError::SectionNotFound{
+                section_name: "directories (vector)".to_string(),
+                dir_block_name: None,
+            })?;
 
         for dir_block in dir_blocks {
             // We ignore the name of the block
-            for (_, value) in dir_block.as_hash().unwrap() {
+            for (block_name, value) in dir_block.as_hash().unwrap() {
                 // Default or error type is File
                 let sync_type = value["sync_type"].as_str().unwrap_or("file");
                 let sync_type = if sync_type == "dir" {
@@ -77,11 +84,27 @@ impl ParseDirectories for YamlDirParser {
 
                 let repo_path = value["repo_path"]
                     .as_str()
-                    .ok_or(ParsingError::SectionNotFound("repo_path".to_string()))?;
+                    .ok_or(ParsingError::SectionNotFound{
+                        section_name: "repo_path".to_string(),
+                        dir_block_name: Some(
+                            block_name
+                                .as_str()
+                                .unwrap_or_else(|| "Could not get the name of the dir block that caused the failure")
+                                .to_string()
+                        )
+                    })?;
 
                 let system_path = value["system_path"]
                     .as_str()
-                    .ok_or(ParsingError::SectionNotFound("system_path".to_string()))?;
+                    .ok_or(ParsingError::SectionNotFound{
+                        section_name: "system_path".to_string(),
+                        dir_block_name: Some(
+                            block_name
+                                .as_str()
+                                .unwrap_or_else(|| "Could not get the name of the dir block that caused the failure")
+                                .to_string()
+                        )
+                    })?;
 
                 let empty_vec : Vec<Yaml> = Vec::new();
                 let ignore_files = value["ignore_files"].
