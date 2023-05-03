@@ -1,4 +1,5 @@
 use crate::DirSync::dir_file_type::DirFileType;
+use lib_fileops::sanitize_relative_path;
 
 /// Represent a dir block inside yaml description
 /// A Dir Block is represented by the path of the git repo, the path in the system and the type of
@@ -23,8 +24,8 @@ pub struct DirBlock {
 impl DirBlock {
     pub fn new(repo_path: String, system_path: String, sync_type: DirFileType, ignore_files: Vec<String>) -> Self {
         return DirBlock {
-            repo_path,
-            system_path,
+            repo_path: sanitize_relative_path(&repo_path),
+            system_path: sanitize_relative_path(&system_path),
             sync_type,
             ignore_files,
         };
