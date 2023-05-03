@@ -92,7 +92,7 @@ pub fn sync_file(from: &str, to: &str) -> anyhow::Result<()> {
         .with_context(|| format!("Could not create dir {} to store new file", parent_dir))?;
 
     // Copy the file to the new dir
-    fs::copy(from, to).context("Failed to copy file to new destination")?;
+    fs::copy(from, to).context(format!("Failed to copy file from {} to {}", from, to))?;
 
     return Ok(());
 }
@@ -144,6 +144,13 @@ mod tests {
         let computed = join_two_paths("testing/", "this/");
         let expected = "testing/this/";
         assert_eq!(expected, computed);
+    }
+
+    #[test]
+    fn test_join_two_paths_with_relative_paths(){
+        let computed = join_two_paths("some/path/", "./relative/path");
+        let expected = "some/path/relative/path";
+        assert_eq!(expected, computed, "Relative paths are not joined properly");
     }
 
     #[test]
