@@ -1,9 +1,19 @@
-use crate::DirSync::dir_file_type::DirFileType;
 use lib_fileops::sanitize_relative_path;
 
-/// Represent a dir block inside yaml description
-/// A Dir Block is represented by the path of the git repo, the path in the system and the type of
-/// sync to be performed
+/// Indicate if a path refers to a directory or a file
+#[derive(Debug, Clone)]
+pub enum DirFileType {
+    File,
+    Dir,
+}
+
+/// Represent a dir block inside a `DirectoriesDescr`
+/// A Dir Block represents:
+///     1. The relative path of the file or dir inside the git repo
+///     2. The relative path of the file or dir inside the system
+///     3. Wether we are working with a file or with a dir
+///     4. If we are working with dirs, relative paths that we want to
+///        exclude
 #[derive(Debug)]
 pub struct DirBlock {
     /// Path relative to DirDescr::repo_base
@@ -13,6 +23,7 @@ pub struct DirBlock {
     system_path: String,
 
     /// Type of sync mechanism
+    /// Wether we are working with files or directories
     sync_type: DirFileType,
 
     /// Files to ignore

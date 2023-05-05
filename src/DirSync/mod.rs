@@ -1,6 +1,5 @@
 pub mod directories_descr;
 pub mod dir_block;
-pub mod dir_file_type;
 mod parsers;
 use parsers::{YamlDirParser, ParseDirectories};
 use anyhow::Context;

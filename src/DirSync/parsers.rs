@@ -4,8 +4,7 @@
 
 use yaml_rust::Yaml;
 
-use crate::DirSync::dir_file_type::DirFileType;
-use crate::DirSync::dir_block::DirBlock;
+use crate::DirSync::dir_block::{DirBlock, DirFileType};
 use crate::YamlProcessor;
 use crate::DirSync::directories_descr::DirectoriesDescr;
 

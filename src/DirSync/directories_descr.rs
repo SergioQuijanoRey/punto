@@ -1,9 +1,8 @@
-use crate::DirSync::dir_file_type::DirFileType;
-use crate::DirSync::dir_block::DirBlock;
+use crate::DirSync::dir_block::{DirBlock, DirFileType};
 use lib_fileops::{join_two_paths, sync_dir, sync_file};
 use anyhow::Context;
 
-/// Represent the directories yaml description
+/// Represent the dir structure that we want to manage
 /// This representation is based on a set of dirblocks
 #[derive(Debug)]
 pub struct DirectoriesDescr {
@@ -86,7 +85,7 @@ mod tests{
     use std::{path::Path, fs};
 
     use super::DirectoriesDescr;
-    use crate::DirSync::{dir_block::DirBlock, dir_file_type::DirFileType};
+    use crate::DirSync::dir_block::{DirBlock, DirFileType};
 
     /// A lot of tests need to work in top a file hierarchy structure
     /// So with this function we can create a basic structure
