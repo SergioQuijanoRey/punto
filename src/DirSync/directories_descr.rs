@@ -104,11 +104,12 @@ impl DirectoriesDescr {
             );
 
             // Check for files that are present in system but not in repo
-            let new_files = get_dir_diff(&absolute_repo_path, &absolute_system_path)
+            let new_files = get_dir_diff(&absolute_system_path, &absolute_repo_path)
                 .context(format!("Could not diff {} and {}", absolute_repo_path, absolute_system_path))
                 .unwrap();
 
             // Warn the user if we found some files
+            // TODO -- println is very confusing
             if new_files.len() > 0 {
                 println!("🚨 Files in {absolute_repo_path} that are not present in {absolute_system_path}:");
                 for file in new_files{
@@ -117,18 +118,19 @@ impl DirectoriesDescr {
                 println!("");
             }
 
-            // Check for files that are present in the repo but not in the system
-            let new_files = get_dir_diff(&absolute_system_path, &absolute_repo_path)
+            // Check for files that are present in the system but not in the repo
+            let new_files = get_dir_diff(&absolute_repo_path, &absolute_system_path)
                 .context(format!("Could not diff {} and {}", absolute_system_path, absolute_repo_path))
                 .unwrap();
 
+            // TODO -- println is very confusing
             // Warn the user if we found some files
             if new_files.len() > 0 {
                 println!("🚨 Files in {absolute_repo_path} that are not present in {absolute_system_path}:");
                 for file in new_files{
                     println!("\t{file}");
                 }
-                println!("Don't worry too much, probably you want to update these files from system to your git repo");
+                println!("Don't worry too much, probably you want to update these files from system to your git repo");;
                 println!("");
             }
         }

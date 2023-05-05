@@ -123,8 +123,7 @@ pub fn join_two_paths(first: &str, second: &str) -> String{
 /// # Examples
 ///
 /// ```
-/// use super::sanitize_relative_path;
-///
+/// use lib_fileops::sanitize_relative_path;
 /// let computed = sanitize_relative_path("./some/rel/path");
 /// let expected = "some/rel/path";
 /// assert_eq!(expected, computed, "Relative path sanitizer did not work well");
@@ -149,16 +148,17 @@ pub fn sanitize_relative_path(rel_path: &str) -> String {
     return rel_path.to_string();
 }
 
-/// Given two folders, returns the list of files that are present in the second
-/// folder but not in the first
+/// Given two folders, defined by paths `first_path` and `second_path`, returns
+/// the list of files that are present in the second dir but not present in the
+/// first dir
 /// TODO -- error handling
 /// TODO -- add tests
 pub fn get_dir_diff(first_path: &str, second_path: &str) -> anyhow::Result<Vec<String>> {
 
     let excluded = vec![];
     let new_files = FolderCompare::new(
-        Path::new(first_path),
         Path::new(second_path),
+        Path::new(first_path),
         &excluded
 
     // TODO -- better error handling, this error is not informative enough
@@ -186,6 +186,7 @@ mod tests {
         sync_dir,
         sync_file,
         sanitize_relative_path,
+        get_dir_diff,
     };
 
     #[test]
@@ -364,5 +365,37 @@ mod tests {
 
         // Now, remove the file hierarchy created
         remove_basic_file_structure(base_path);
+    }
+
+    #[test]
+    fn test_get_diff_dir_basic_case(){
+        let base_path = "./test_get_diff_dir_basic_case";
+        let other_path = "./test_get_diff_dir_basic_case_other_path";
+
+        // Start creating a basic file structure
+        // If a test fails, this structure might be already created, so delete if first
+        remove_basic_file_structure(base_path);
+        create_basic_file_structure(base_path)
+            .expect("Could not create basic file structure for the test");
+
+        // Use the same hierarchy in other place
+        create_basic_file_structure(other_path)
+            .expect("Could not create basic file structure for the test");
+
+        // Create a file that is in one place but not in the other
+        let new_file_path = Path::new(other_path).join("test/this_file_is_new.rs");
+        fs::File::create(&new_file_path).unwrap();
+
+        // Compute one diff and check the result
+        // A single new file should be detected
+        let new_files = get_dir_diff(base_path, other_path).unwrap();
+        let expected_new_files = vec![new_file_path.to_str().unwrap().to_string()];
+        assert_eq!(new_files, expected_new_files, "Diff dir did not found a new file");
+
+        // Compute the other diff and check the result
+        // This time no new files should be detected
+        let new_files = get_dir_diff(other_path, base_path).unwrap();
+        let expected_new_files: Vec<String> = vec![];
+        assert_eq!(new_files, expected_new_files, "Diff dir found new files when no one should be found");
     }
 }
