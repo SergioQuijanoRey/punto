@@ -1,6 +1,9 @@
+use std::path::Path;
+
 use crate::DirSync::dir_block::{DirBlock, DirFileType};
 use lib_fileops::{join_two_paths, sync_dir, sync_file};
 use anyhow::Context;
+use folder_compare::FolderCompare;
 
 /// Represent the dir structure that we want to manage
 /// This representation is based on a set of dirblocks
@@ -75,6 +78,86 @@ impl DirectoriesDescr {
                     .context(format!("Could not sync dir from {} to {}", from, to))
                     .unwrap(),
             };
+        }
+    }
+
+    /// Checks for dir sync problems
+    /// That's to say, search for files that are present in repo (or system)
+    /// but not in system (or repo)
+    /// This happens when we delete a file, because dir sync does not delete files
+    pub fn check(&self) {
+        // Filter entries that are about files, that entries can't be checked
+        let only_dirs: Vec<&DirBlock> = self.dir_blocks.iter()
+            .filter(|block| block.sync_type() == &DirFileType::Dir)
+            .collect();
+
+        // Iterate over the dir blocks and check for files present in one place
+        // but not in the other
+        for curr_dir_block in only_dirs{
+
+            let absolute_repo_path = join_two_paths(
+                self.repo_base.as_str(),
+                curr_dir_block.repo_path().as_str()
+            );
+            let absolute_system_path = join_two_paths(
+                self.system_base.as_str(),
+                curr_dir_block.system_path().as_str()
+            );
+            let excluded = vec![];
+
+            // Check for files present in the repo that are not present in the
+            // system
+            let new_files = FolderCompare::new(
+                Path::new(&absolute_repo_path),
+                Path::new(&absolute_system_path),
+                &excluded
+
+            // TODO -- better error handling, this error is not informative enough
+            ).expect(&format!(
+                "Could not diff directories {} and {}",
+                absolute_repo_path,
+                absolute_system_path,
+            ))
+            .new_files;
+
+            // We want the strings out of the `PathBuf` objects
+            let new_files: Vec<&str> = new_files.iter().map(|pathbuf| pathbuf.to_str().unwrap()).collect();
+
+            // Warn the user if we found some files
+            if new_files.len() > 0 {
+                println!("🚨 Files in {absolute_repo_path} that are not present in {absolute_system_path}:");
+                for file in new_files{
+                    println!("\t{file}");
+                }
+                println!("");
+            }
+
+            // Now, check for files present in the system that are not present
+            // in the repo
+            let new_files = FolderCompare::new(
+                Path::new(&absolute_system_path),
+                Path::new(&absolute_repo_path),
+                &excluded
+
+            // TODO -- better error handling, this error is not informative enough
+            ).expect(&format!(
+                "Could not diff directories {} and {}",
+                absolute_system_path,
+                absolute_repo_path,
+            ))
+            .new_files;
+
+            // We want the strings out of the `PathBuf` objects
+            let new_files: Vec<&str> = new_files.iter().map(|pathbuf| pathbuf.to_str().unwrap()).collect();
+
+            // Warn the user if we found some files
+            if new_files.len() > 0 {
+                println!("🚨 Files in {absolute_repo_path} that are not present in {absolute_system_path}:");
+                for file in new_files{
+                    println!("\t{file}");
+                }
+                println!("");
+            }
         }
     }
 }

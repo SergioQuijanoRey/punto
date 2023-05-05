@@ -8,6 +8,7 @@ edition = "2018"
 yaml-rust = "0.4.5"
 clap = "2"
 dircpy = "0.3.7"
+folder_compare = "0.4"
 
 # Error handling
 anyhow = "1.0.71"
