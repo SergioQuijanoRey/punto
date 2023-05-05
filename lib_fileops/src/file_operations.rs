@@ -1,5 +1,6 @@
 use std::{fs, path::Path};
 use anyhow::Context;
+use folder_compare::FolderCompare;
 
 /// Module to implement basic file operations such as copy files, copy dirs,
 /// create dirs, ...
@@ -146,6 +147,32 @@ pub fn sanitize_relative_path(rel_path: &str) -> String {
     }
 
     return rel_path.to_string();
+}
+
+/// Given two folders, returns the list of files that are present in the second
+/// folder but not in the first
+/// TODO -- error handling
+/// TODO -- add tests
+pub fn get_dir_diff(first_path: &str, second_path: &str) -> anyhow::Result<Vec<String>> {
+
+    let excluded = vec![];
+    let new_files = FolderCompare::new(
+        Path::new(first_path),
+        Path::new(second_path),
+        &excluded
+
+    // TODO -- better error handling, this error is not informative enough
+    ).expect(&format!(
+        "Could not diff directories {} and {}",
+        first_path,
+        second_path,
+    ))
+    .new_files;
+
+    // We want the strings out of the `PathBuf` objects
+    let new_files: Vec<String> = new_files.iter().map(|pathbuf| pathbuf.to_str().unwrap().to_string()).collect();
+    return Ok(new_files);
+
 }
 
 #[cfg(test)]

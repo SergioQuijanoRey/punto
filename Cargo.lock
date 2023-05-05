@@ -121,6 +121,7 @@ name = "lib_fileops"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "folder_compare",
  "lib_commands",
  "thiserror",
 ]
@@ -168,7 +169,6 @@ dependencies = [
  "anyhow",
  "clap",
  "dircpy",
- "folder_compare",
  "lib_commands",
  "lib_fileops",
  "thiserror",

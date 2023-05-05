@@ -8,5 +8,6 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.70"
 thiserror = "1.0"
+folder_compare = "0.4"
 
 lib_commands = { path = "../lib_commands" }
