@@ -30,3 +30,18 @@ pub fn handle_upload(yaml_file: &str) {
     // Upload
     dir_descr.upload_from_system_to_repo();
 }
+
+pub fn handle_check(yaml_file: &str) {
+    println!("🔎 Checking for problems in your dir syncs");
+
+    // Get directives from yaml file
+    let dir_descr = YamlDirParser::parse_file(yaml_file)
+        // TODO -- this context is not optimal for the user
+        .context("Could not parse contents of Yaml file to rust objects")
+
+        // TODO -- should propagate error or fail here?
+        .unwrap();
+
+    // Check directories specified in the description
+    dir_descr.check();
+}

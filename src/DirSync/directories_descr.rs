@@ -1,5 +1,7 @@
+use std::path::Path;
+
 use crate::DirSync::dir_block::{DirBlock, DirFileType};
-use lib_fileops::{join_two_paths, sync_dir, sync_file};
+use lib_fileops::{join_two_paths, sync_dir, sync_file, get_dir_diff};
 use anyhow::Context;
 
 /// Represent the dir structure that we want to manage
@@ -75,6 +77,63 @@ impl DirectoriesDescr {
                     .context(format!("Could not sync dir from {} to {}", from, to))
                     .unwrap(),
             };
+        }
+    }
+
+    /// Checks for dir sync problems
+    /// That's to say, search for files that are present in repo (or system)
+    /// but not in system (or repo)
+    /// This happens when we delete a file, because dir sync does not delete files
+    pub fn check(&self) {
+        // Filter entries that are about files, that entries can't be checked
+        let only_dirs: Vec<&DirBlock> = self.dir_blocks.iter()
+            .filter(|block| block.sync_type() == &DirFileType::Dir)
+            .collect();
+
+        // Iterate over the dir blocks and check for files present in one place
+        // but not in the other
+        for curr_dir_block in only_dirs{
+
+            let absolute_repo_path = join_two_paths(
+                self.repo_base.as_str(),
+                curr_dir_block.repo_path().as_str()
+            );
+            let absolute_system_path = join_two_paths(
+                self.system_base.as_str(),
+                curr_dir_block.system_path().as_str()
+            );
+
+            // Check for files that are present in the repo but not in the system
+            // These are the dangerous files
+            let new_files = get_dir_diff(&absolute_system_path, &absolute_repo_path)
+                .context(format!("Could not diff {} and {}", absolute_repo_path, absolute_system_path))
+                .unwrap();
+
+            // Warn the user if we found some files
+            if new_files.len() > 0 {
+                println!("🚨 Found files that are present in the repo but not in the system!");
+                for file in new_files{
+                    println!("\t- {file}");
+                }
+                println!("");
+            }
+
+            // Check for files that are present in the system but not in the repo
+            let new_files = get_dir_diff(&absolute_repo_path, &absolute_system_path)
+                .context(format!("Could not diff {} and {}", absolute_system_path, absolute_repo_path))
+                .unwrap();
+
+            // Warn the user if we found some files
+            if new_files.len() > 0 {
+
+                println!("🚨 Found files that are present in the system but not in the repo!");
+                println!("😅 Don't worry too much, probably you want to update these files from system to your git repo");;
+
+                for file in new_files{
+                    println!("\t- {file}");
+                }
+                println!("");
+            }
         }
     }
 }

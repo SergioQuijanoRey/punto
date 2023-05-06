@@ -1,7 +1,7 @@
 use lib_fileops::sanitize_relative_path;
 
 /// Indicate if a path refers to a directory or a file
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum DirFileType {
     File,
     Dir,

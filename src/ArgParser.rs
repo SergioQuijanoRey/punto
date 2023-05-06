@@ -68,6 +68,16 @@ fn generate_matches() -> ArgMatches<'static>{
             )
             .takes_value(true)
             .requires("install command")
+        )
+
+        .arg(
+            Arg::with_name("check dir sync problems")
+            .long("--check")
+            .value_name("yaml_file")
+            .help(
+                "Checks for dir sync problems. Searches for files deleted in a repo (or system) dir that are still present in their system (or repo) dir"
+            )
+            .takes_value(true)
         );
 
     let matches = app.get_matches();
@@ -95,6 +105,7 @@ fn call_handlers(matches: ArgMatches) {
 
                 &"download command" => DirSync::handle_download(yaml_file),
                 &"upload command" => DirSync::handle_upload(yaml_file),
+                &"check dir sync problems" => DirSync::handle_check(yaml_file),
                 _ => println!("Command not recognized"),
             }
         }
