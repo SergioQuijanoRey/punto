@@ -152,7 +152,6 @@ pub fn sanitize_relative_path(rel_path: &str) -> String {
 /// the list of files that are present in the second dir but not present in the
 /// first dir
 /// TODO -- error handling
-/// TODO -- add tests
 pub fn get_dir_diff(first_path: &str, second_path: &str) -> anyhow::Result<Vec<String>> {
 
     let excluded = vec![];
