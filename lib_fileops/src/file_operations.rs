@@ -1,5 +1,6 @@
 use std::{fs, path::Path};
 use anyhow::Context;
+use thiserror::Error;
 use folder_compare::FolderCompare;
 
 /// Module to implement basic file operations such as copy files, copy dirs,
@@ -148,10 +149,20 @@ pub fn sanitize_relative_path(rel_path: &str) -> String {
     return rel_path.to_string();
 }
 
+/// `folder_compare::Error` does not implement `Error` trait, which is needed
+/// for using anyhow. So this enum takes a `folder_compare::Error` and implements
+/// the traits we need
+#[derive(Error, Debug)]
+enum DiffError{
+    #[error("Error while computing the diff between two dirs, reason: {inner_error:?}")]
+    DiffError {
+        inner_error: folder_compare::Error,
+    }
+}
+
 /// Given two folders, defined by paths `first_path` and `second_path`, returns
 /// the list of files that are present in the second dir but not present in the
 /// first dir
-/// TODO -- error handling
 pub fn get_dir_diff(first_path: &str, second_path: &str) -> anyhow::Result<Vec<String>> {
 
     let excluded = vec![];
@@ -159,19 +170,15 @@ pub fn get_dir_diff(first_path: &str, second_path: &str) -> anyhow::Result<Vec<S
         Path::new(second_path),
         Path::new(first_path),
         &excluded
-
-    // TODO -- better error handling, this error is not informative enough
-    ).expect(&format!(
-        "Could not diff directories {} and {}",
-        first_path,
-        second_path,
-    ))
+    )
+    // Use our custom error type so we can use anyhow
+    .map_err(|inner| DiffError::DiffError{inner_error: inner})
+    .context(format!("An error ocurred while diffing {first_path} and {second_path}"))?
     .new_files;
 
     // We want the strings out of the `PathBuf` objects
     let new_files: Vec<String> = new_files.iter().map(|pathbuf| pathbuf.to_str().unwrap().to_string()).collect();
     return Ok(new_files);
-
 }
 
 #[cfg(test)]
