@@ -177,7 +177,12 @@ pub fn get_dir_diff(first_path: &str, second_path: &str) -> anyhow::Result<Vec<S
     .new_files;
 
     // We want the strings out of the `PathBuf` objects
-    let new_files: Vec<String> = new_files.iter().map(|pathbuf| pathbuf.to_str().unwrap().to_string()).collect();
+    let new_files: Vec<String> = new_files.iter().map(|pathbuf|
+        pathbuf.to_str().context("Could not convert pathbuf {pathbuf:?} to string")
+    )
+    .collect::<anyhow::Result<Vec<&str>>>()? // some paths could faild to be converted to `&str`
+    .iter().map(|path| path.to_string()).collect(); // `&str -> String`
+
     return Ok(new_files);
 }
 
