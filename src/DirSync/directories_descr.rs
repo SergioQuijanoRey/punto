@@ -127,7 +127,7 @@ impl DirectoriesDescr {
             if new_files.len() > 0 {
 
                 println!("🚨 Found files that are present in the system but not in the repo!");
-                println!("😅 Don't worry too much, probably you want to update these files from system to your git repo");;
+                println!("😅 Don't worry too much, probably you want to update these files from system to your git repo");
 
                 for file in new_files{
                     println!("\t- {file}");
