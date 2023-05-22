@@ -1,7 +1,7 @@
 /// Parses the cli arguments given by the user
 
-use crate::CommandProcessor;
 use crate::DirSync;
+use crate::Commands;
 use crate::Installer;
 use clap::{App, Arg, ArgMatches};
 
@@ -93,7 +93,7 @@ fn call_handlers(matches: ArgMatches) {
             let yaml_file = matches.value_of(arg_name).unwrap();
 
             match arg_name {
-                &"shell command" => CommandProcessor::handle_shell_command(yaml_file),
+                &"shell command" => Commands::handle_shell_command(yaml_file),
                 &"install command" => {
 
                     // Check if we passed --section parameter

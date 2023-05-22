@@ -11,3 +11,4 @@ pub fn parse_yaml(file_path: &str) -> Result<yaml_rust::Yaml, Box<dyn Error>> {
     let parsed_contents = parsed_contents[0].clone();
     return Ok(parsed_contents);
 }
+

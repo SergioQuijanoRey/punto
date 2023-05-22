@@ -1,65 +1,13 @@
-// TODO -- split in different modules, file too large
-
 use std::process::exit;
+
 use crate::YamlProcessor;
-use lib_commands::{SingleCommand, SingleCommandError};
+use crate::Commands::CommandBlock;
 
-/// Represent a group of commands to execute in sequence
-/// If one command fails, the rest of the commands won't be executed
-// TODO -- Add the option to keep executing commands even though one fails
-#[derive(Debug)]
-pub struct CommandBlock {
-
-    /// The sequence of commands
-    commands: Vec<SingleCommand>,
-
-    /// To describe what is the purpose of this block of commands
-    description: String,
-
-}
-
-impl CommandBlock {
-    /// Creates a new CommandBlock
-    pub fn new(commands: Vec<SingleCommand>, description: String) -> Self {
-        return CommandBlock {
-            commands,
-            description,
-        };
-    }
-
-    /// Executes all commands of the command block
-    pub fn execute(&self) -> Result<(), SingleCommandError>{
-        println!("Launching command block {}", self.description);
-        println!(
-            "================================================================================"
-        );
-
-        for command in &self.commands {
-            // Run the command. Return the error if we find one
-            let _result = command.run()?;
-        }
-
-        // All commands executed well
-        return Ok(());
-    }
-}
-
-
-/// Handler to --shell cli argument
-/// Reads the shell yaml config file and executes commands described in the yaml file
-// TODO -- handle exceptions
-pub fn handle_shell_command(yaml_file: &str) {
-    println!("Running shell commands defined in shell.yaml");
-    println!("================================================================================");
-    let command_blocks = parse_yaml_command(yaml_file);
-    for command in command_blocks {
-        command.execute();
-    }
-}
+use lib_commands::SingleCommand;
 
 /// TODO -- DESIGN -- parsing files seems should go to different modules
 /// Given a yaml file path, it returns the CommandOptions vector which are used to launch a command
-fn parse_yaml_command(file_path: &str) -> Vec<CommandBlock> {
+pub fn parse_yaml_command(file_path: &str) -> Vec<CommandBlock> {
 
     let parsed_contents = YamlProcessor::parse_yaml(file_path);
     let parsed_contents = match parsed_contents{

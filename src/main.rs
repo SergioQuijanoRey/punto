@@ -1,4 +1,4 @@
-mod CommandProcessor;
+mod Commands;
 mod ArgParser;
 mod YamlProcessor;
 mod Installer;
