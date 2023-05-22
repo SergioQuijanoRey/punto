@@ -165,6 +165,7 @@ struct Entry {
     repo_path: String,
     system_path: String,
     sync_type: Option<String>,
+    ignore_paths: Option<Vec<String>>,
 }
 
 /// Errors that can happen when parsing a intermediate representation for TOML
@@ -186,7 +187,7 @@ impl TryFrom<DirectoriesDescrTomlRepresentation> for DirectoriesDescr {
 
         // TODO -- might be a good idea to implement `Into<DirBlock> for Entry`
         // because that's what we are doing here
-        for (key, entry) in repr.entries{
+        for (_, entry) in repr.entries{
 
             // Get the sync type for this entry
             let sync_type = entry.sync_type.unwrap_or("file".to_string());
@@ -196,15 +197,14 @@ impl TryFrom<DirectoriesDescrTomlRepresentation> for DirectoriesDescr {
                 other => return Err(TomlToDirDescrError::BadSyncType(other.to_string())),
             };
 
+            // Get the list of ignored files
+            let ignored_files = entry.ignore_paths.unwrap_or(vec![]);
 
             let curr_block = DirBlock::new(
                 entry.repo_path,
                 entry.system_path,
                 sync_type,
-
-                // TODO -- BUG -- Need to be implemented
-                // TODO -- BUG -- We are not ignoring files!
-                vec![],
+                ignored_files,
             );
 
             dir_blocks.push(curr_block);
