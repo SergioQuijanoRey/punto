@@ -5,13 +5,17 @@ authors = ["Sergio Quijano Rey <sergiquijano@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-yaml-rust = "0.4.5"
 clap = "2"
 dircpy = "0.3.7"
 
 # Error handling
 anyhow = "1.0.71"
 thiserror = "1.0.40"
+
+# Reading file contents and parsing them into Rust structs
+serde = { version = "1.0", features = ["derive"] }
+yaml-rust = "0.4.5"
+toml = "0.7.3"
 
 lib_commands = { path = "./lib_commands" }
 lib_fileops = { path = "./lib_fileops" }
