@@ -1,7 +1,8 @@
 mod parsers;
 
 use lib_commands::{SingleCommand, SingleCommandError};
-use crate::Commands::parsers::parse_yaml_command;
+
+use crate::Commands::parsers::{YamlCommandsParser, ParseCommandsFile};
 
 /// Represent a group of commands to execute in sequence
 /// If one command fails, the rest of the commands won't be executed
@@ -50,7 +51,7 @@ impl CommandBlock {
 pub fn handle_shell_command(yaml_file: &str) {
     println!("Running shell commands defined in shell.yaml");
     println!("================================================================================");
-    let command_blocks = parse_yaml_command(yaml_file);
+    let command_blocks = YamlCommandsParser::parse_file(yaml_file).unwrap();
     for command in command_blocks {
         command.execute();
     }

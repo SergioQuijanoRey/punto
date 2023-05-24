@@ -1,60 +1,99 @@
-use std::process::exit;
-
 use crate::YamlProcessor;
 use crate::Commands::CommandBlock;
 
 use lib_commands::SingleCommand;
+use thiserror::Error;
 
-/// TODO -- DESIGN -- parsing files seems should go to different modules
-/// Given a yaml file path, it returns the CommandOptions vector which are used to launch a command
-pub fn parse_yaml_command(file_path: &str) -> Vec<CommandBlock> {
+/// All parsers must take a file path and return a vector of `CommandBlock`
+pub trait ParseCommandsFile{
+    fn parse_file(path: &str) -> Result<Vec<CommandBlock>, ParsingError>;
+}
 
-    let parsed_contents = YamlProcessor::parse_yaml(file_path);
-    let parsed_contents = match parsed_contents{
-        Ok(contents) => contents,
-        Err(err) => {
-            eprintln!("Could not parse {}, exiting now", file_path);
-            eprintln!("Error code was {}", err);
-            exit(-1);
-        }
-    };
+/// Errors that can happen while parsing a file into a vector of `CommandBlock`
+#[derive(Error, Debug)]
+pub enum ParsingError {
+    #[error("Could not parse contents of the file, reason was {reason}")]
+    ParsingContent{
+        reason: String,
+    },
 
-    let mut command_blocks = vec![];
+    #[error("Field {field_name} is mandatory, and not found in this block")]
+    MissingField{
+        field_name: String,
+    },
 
-    // Getting the commands from the yaml file into struct
-    for (_, value) in parsed_contents.as_hash().unwrap().iter() {
+    #[error("Could not convert field '{field_name}' to type '{type_should_be}'")]
+    BadFieldType{
+        field_name: String,
+        type_should_be: String,
+    },
 
-        println!("Value hash is {:?}", value["description"]);
-
-        // Get the description of the block
-        let description = value["description"].as_str().unwrap_or("No description provided");
-
-        // Get if the commands need sudo
-        let sudo = value["sudo"].as_bool().unwrap_or(false);
-
-        // Get if the commands need to be run quietly
-        let quiet = value["quiet"].as_bool().unwrap_or(false);
-
-
-        // Get all the commands of this block
-        let vector_of_commands = value["commands"].as_vec().unwrap();
-        let vector_of_commands: Vec<String> = vector_of_commands
-            .into_iter()
-            .map(|command| command.as_str().unwrap().to_string())
-            .collect();
-
-        // Create a vector of single commands
-        let commands: Vec<SingleCommand> = vector_of_commands
-            .into_iter()
-            .map(|command_string| SingleCommand::new(command_string, quiet, sudo).unwrap())
-            .collect();
-
-        // Now create the current command block
-        let current_command_block = CommandBlock::new(commands, description.to_string());
-
-        // And add that command block to our vector of command blocks
-        command_blocks.push(current_command_block);
+    #[error("Command '{command_string}' is not valid, reason is '{reason}'")]
+    BadCommand{
+        command_string: String,
+        reason: String
     }
 
-    return command_blocks;
+}
+
+/// Implementation of parsing for yaml files
+pub struct YamlCommandsParser;
+impl ParseCommandsFile for YamlCommandsParser{
+    fn parse_file(path: &str) -> Result<Vec<CommandBlock>, ParsingError> {
+
+        let mut command_blocks = vec![];
+
+        // Getting the commands from the yaml file into struct
+        for (_, value) in YamlProcessor::parse_yaml(path)
+            .map_err(|err| ParsingError::ParsingContent{reason: err.to_string()})?
+            .as_hash().
+            ok_or(ParsingError::ParsingContent { reason: "Could not convert contents to a hash map".to_string() })?.iter() {
+
+            println!("Value hash is {:?}", value["description"]);
+
+            // Get the description of the block
+            let description = value["description"].as_str().unwrap_or("No description provided");
+
+            // Get if the commands need sudo
+            let sudo = value["sudo"].as_bool().unwrap_or(false);
+
+            // Get if the commands need to be run quietly
+            let quiet = value["quiet"].as_bool().unwrap_or(false);
+
+
+            // Get all the commands of this block
+            let vector_of_commands = value["commands"].as_vec()
+                .ok_or(ParsingError::MissingField{field_name: "commands".to_string()})?;
+
+            let vector_of_commands: Result<Vec<&str>, ParsingError> = vector_of_commands
+                .into_iter()
+                .map(|command| command.as_str().ok_or(ParsingError::BadFieldType {
+                    field_name: "command".to_string(), type_should_be: "String".to_string()
+                }))
+                .collect();
+
+            let vector_of_commands: Vec<String> = vector_of_commands?
+                .into_iter()
+                .map(|string| string.to_string())
+                .collect();
+
+            // Create a vector of single commands
+            let commands: Result<Vec<SingleCommand>, ParsingError> = vector_of_commands
+                .into_iter()
+                .map(|command_string|
+                    SingleCommand::new(command_string.clone(), quiet, sudo)
+                        .map_err(|err| ParsingError::BadCommand{command_string, reason: err.to_string()})
+                )
+                .collect();
+            let commands = commands?;
+
+            // Now create the current command block
+            let current_command_block = CommandBlock::new(commands, description.to_string());
+
+            // And add that command block to our vector of command blocks
+            command_blocks.push(current_command_block);
+        }
+
+        return Ok(command_blocks);
+    }
 }
