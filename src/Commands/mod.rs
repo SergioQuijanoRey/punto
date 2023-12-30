@@ -7,6 +7,7 @@ use crate::Commands::parsers::{YamlCommandsParser, ParseCommandsFile};
 /// Represent a group of commands to execute in sequence
 /// If one command fails, the rest of the commands won't be executed
 // TODO -- Add the option to keep executing commands even though one fails
+// TODO -- DESIGN -- Really bad desing, as shown in `TomlCommandsParser`
 #[derive(Debug)]
 pub struct CommandBlock {
 

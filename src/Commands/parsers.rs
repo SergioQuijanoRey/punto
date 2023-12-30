@@ -1,7 +1,12 @@
+use std::collections::HashMap;
+use std::convert::TryFrom;
+use std::fs;
+
 use crate::YamlProcessor;
 use crate::Commands::CommandBlock;
 
 use lib_commands::SingleCommand;
+use serde::Deserialize;
 use thiserror::Error;
 
 /// All parsers must take a file path and return a vector of `CommandBlock`
@@ -12,6 +17,13 @@ pub trait ParseCommandsFile{
 /// Errors that can happen while parsing a file into a vector of `CommandBlock`
 #[derive(Error, Debug)]
 pub enum ParsingError {
+
+    #[error("Could not read the file, reason was {reason}")]
+    CouldNotReadFile{
+        reason: String
+    },
+
+
     #[error("Could not parse contents of the file, reason was {reason}")]
     ParsingContent{
         reason: String,
@@ -32,6 +44,11 @@ pub enum ParsingError {
     BadCommand{
         command_string: String,
         reason: String
+    },
+
+    #[error("Could not convert intermediate representation to the final representation. Reason was '{reason:?}'")]
+    IntermediateReprToFinalRepr{
+        reason: IntermediateReprToFinalReprError
     }
 
 }
@@ -95,5 +112,93 @@ impl ParseCommandsFile for YamlCommandsParser{
         }
 
         return Ok(command_blocks);
+    }
+}
+
+
+
+
+/// Intermediate representation of a `DirectoriesDescr`, used when parsing
+/// from a Toml file
+#[derive(Deserialize, Debug)]
+struct CommandsDescrTomlRepresentation {
+    #[serde(flatten)]
+    entries: HashMap<String, Entry>
+}
+
+#[derive(Deserialize, Debug)]
+struct Entry {
+    description: String,
+    quiet: Option<bool>,
+    sudo: Option<bool>,
+    commands: Vec<String>,
+}
+
+#[derive(Error, Debug)]
+pub enum IntermediateReprToFinalReprError{
+
+    #[error("Error while constructing a single command\nCommand was: '{command_str}'\nError was '{err}'")]
+    ConstructingSingleCommand {
+        command_str: String,
+        err: lib_commands::SingleCommandError,
+    }
+
+}
+
+/// Given a CommandsDescrTomlRepresentation, we want to get the final representation
+/// as a vector of `CommandBlock`
+impl TryFrom<CommandsDescrTomlRepresentation> for Vec<CommandBlock> {
+    type Error = IntermediateReprToFinalReprError;
+
+    fn try_from(value: CommandsDescrTomlRepresentation) -> Result<Self, Self::Error> {
+        let mut blocks = vec![];
+
+        for (name, entry) in value.entries {
+
+            let mut curr_commands = vec![];
+            for command in entry.commands {
+                let curr_command = SingleCommand::new(
+                    command.clone(),
+                    entry.quiet.unwrap_or(false),
+                    entry.sudo.unwrap_or(false),
+                )
+                .map_err(|err| IntermediateReprToFinalReprError::ConstructingSingleCommand {
+                    command_str: command.to_string(),
+                    err
+                })?;
+
+                curr_commands.push(curr_command);
+
+            }
+
+            let curr_block = CommandBlock::new(
+                curr_commands,
+                entry.description,
+            );
+
+            blocks.push(curr_block);
+        }
+
+        return Ok(blocks);
+    }
+}
+
+pub struct TomlCommandsParser;
+impl ParseCommandsFile for TomlCommandsParser {
+    fn parse_file(path: &str) -> Result<Vec<CommandBlock>, ParsingError> {
+
+        // Read the raw data from the given file
+        let data = fs::read_to_string(path)
+            .map_err(|e| ParsingError::CouldNotReadFile { reason: format!("{:?}", e)})?;
+
+        // Parse that data to a intermediate struct representation
+        let intermediate_representation: CommandsDescrTomlRepresentation = toml::from_str(&data)
+            .map_err(|e| ParsingError::ParsingContent { reason: e.to_string() })?;
+
+        // Convert the intermediate representation to `DirectoriesDescr` struct
+        let dir_descr = Vec::<CommandBlock>::try_from(intermediate_representation)
+            .map_err(|e| ParsingError::IntermediateReprToFinalRepr { reason: e })?;
+
+        return Ok(dir_descr);
     }
 }
