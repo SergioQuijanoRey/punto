@@ -1,25 +1,46 @@
+use std::collections::HashMap;
+use std::convert::{TryInto, TryFrom};
+use std::fs;
+
 /// Module where we parse yaml files to Rust structs that our program can use
 /// Also, more than one parser can be implemented here
 /// For example, parser for yaml files, for toml files, ...
 
+// TODO -- This module is very messy
+
 use yaml_rust::Yaml;
+use serde::Deserialize;
+use thiserror::Error;
 
 use crate::DirSync::dir_block::{DirBlock, DirFileType};
 use crate::YamlProcessor;
 use crate::DirSync::directories_descr::DirectoriesDescr;
 
 
-use thiserror::Error;
+// TODO -- DESING -- we are holding some errors as strings, which is kinda weird
 #[derive(Debug, Error)]
 pub enum ParsingError {
 
-    #[error("Could not parse file.yaml to a rust object. Parsing error code was {0}")]
-    CouldNotParseFile(String),
+    #[error("Could not read the contents of the file")]
+    CouldNotReadContentsOfFile{
+        reason: String,
+    },
+
+    #[error("Could not parse file {file} to a rust object, reason was:\n{reason}")]
+    CouldNotParseFile{
+        file: String,
+        reason: String,
+    },
 
     #[error("Could not get section {section_name} at block {dir_block_name:?} from the parsed file\nCheck that the contents of the block are properly indented")]
     SectionNotFound{
         section_name: String,
         dir_block_name: Option<String>,
+    },
+
+    #[error("Could not convert intermediate representation to DirectoriesDescr, reason was:\n{reason}")]
+    IntermediateReprToFinalRepr{
+        reason: String
     },
 }
 
@@ -39,7 +60,10 @@ impl ParseDirectories for YamlDirParser {
         let parsed_contents = match parsed_contents {
             Ok(contents) => contents,
             Err(err) => {
-                return Err(ParsingError::CouldNotParseFile(format!("{}", err)));
+                return Err(ParsingError::CouldNotParseFile{
+                    file: path.to_string(),
+                    reason: format!("{}", err),
+                });
             }
         };
 
@@ -120,6 +144,96 @@ impl ParseDirectories for YamlDirParser {
                 ));
             }
         }
+
+        return Ok(dir_descr);
+    }
+}
+
+/// Intermediate representation of a `DirectoriesDescr`, used when parsing
+/// from a Toml file
+#[derive(Deserialize, Debug)]
+struct DirectoriesDescrTomlRepresentation {
+    repo_base: String,
+    system_base: String,
+
+    #[serde(flatten)]
+    entries: HashMap<String, Entry>
+}
+
+#[derive(Deserialize, Debug)]
+struct Entry {
+    repo_path: String,
+    system_path: String,
+    sync_type: Option<String>,
+    ignore_paths: Option<Vec<String>>,
+}
+
+/// Errors that can happen when parsing a intermediate representation for TOML
+/// into a `DirectoriesDescrTomlRepresentation`
+#[derive(Error, Debug)]
+pub enum TomlToDirDescrError {
+    #[error("Sync type is neither 'file' or 'dir', it is {0}")]
+    BadSyncType(String),
+
+}
+
+/// Implement the conversion from the intermediate representation to the final
+/// representation that we want
+impl TryFrom<DirectoriesDescrTomlRepresentation> for DirectoriesDescr {
+    type Error = TomlToDirDescrError;
+
+    fn try_from(repr: DirectoriesDescrTomlRepresentation) -> Result<Self, Self::Error> {
+        let mut dir_blocks = vec![];
+
+        // TODO -- might be a good idea to implement `Into<DirBlock> for Entry`
+        // because that's what we are doing here
+        for (_, entry) in repr.entries{
+
+            // Get the sync type for this entry
+            let sync_type = entry.sync_type.unwrap_or("file".to_string());
+            let sync_type = match sync_type.as_str() {
+                "file" => DirFileType::File,
+                "dir" => DirFileType::Dir,
+                other => return Err(TomlToDirDescrError::BadSyncType(other.to_string())),
+            };
+
+            // Get the list of ignored files
+            let ignored_files = entry.ignore_paths.unwrap_or(vec![]);
+
+            let curr_block = DirBlock::new(
+                entry.repo_path,
+                entry.system_path,
+                sync_type,
+                ignored_files,
+            );
+
+            dir_blocks.push(curr_block);
+        }
+
+        return Ok(DirectoriesDescr::new(
+            repr.repo_base,
+            repr.system_base,
+            dir_blocks
+        ));
+    }
+}
+
+/// Parser for yaml files
+pub struct TomlDirParser;
+impl ParseDirectories for TomlDirParser {
+    fn parse_file(path: &str) -> Result<DirectoriesDescr, ParsingError> {
+
+        // Read the raw data from the given file
+        let data = fs::read_to_string(path)
+            .map_err(|e| ParsingError::CouldNotReadContentsOfFile{reason: format!("{}", e)})?;
+
+        // Parse that data to a intermediate struct representation
+        let intermediate_representation: DirectoriesDescrTomlRepresentation = toml::from_str(&data)
+            .map_err(|e| ParsingError::CouldNotParseFile { file: path.to_string(), reason: format!("{}", e) })?;
+
+        // Convert the intermediate representation to `DirectoriesDescr` struct
+        let dir_descr = DirectoriesDescr::try_from(intermediate_representation)
+            .map_err(|e| ParsingError::IntermediateReprToFinalRepr { reason: format!("{}", e) })?;
 
         return Ok(dir_descr);
     }
