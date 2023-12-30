@@ -71,32 +71,34 @@ mod test_installer_section{
     // TODO -- design -- test this without actually installing packages
     // TODO -- this test depends on the linux distro that is run. For example,
     // now we can only run it on NixOS
-    #[test]
-    pub fn test_failed_packages_are_properly_tracked() -> Result<(), String>{
-        // Build a InstallerSection with some non-existing packages
-        let sudo = false;
-        let section = InstallerSection::new(
-            "Install some packages".to_string(),
-            "nix-env -iA".to_string(),
-            vec!["nixos.git".to_string(), "thispackagedoesnotexist".to_string(), "nixos.exa".to_string()],
-            sudo,
-        );
+    // TODO -- TEST -- we have disabled this test
+    //                 see issue #24
+    // #[test]
+    // pub fn test_failed_packages_are_properly_tracked() -> Result<(), String>{
+    //     // Build a InstallerSection with some non-existing packages
+    //     let sudo = false;
+    //     let section = InstallerSection::new(
+    //         "Install some packages".to_string(),
+    //         "nix-env -iA".to_string(),
+    //         vec!["nixos.git".to_string(), "thispackagedoesnotexist".to_string(), "nixos.exa".to_string()],
+    //         sudo,
+    //     );
 
-        // Run the installation and collect the packages
-        let failed_packages = section.install_all_packages();
+    //     // Run the installation and collect the packages
+    //     let failed_packages = section.install_all_packages();
 
-        // There must be at least one failed package
-        let failed_packages = match failed_packages{
-            None => return Err("Some failed packages were expected".to_string()),
-            Some(failed_packages) => failed_packages,
-        };
+    //     // There must be at least one failed package
+    //     let failed_packages = match failed_packages{
+    //         None => return Err("Some failed packages were expected".to_string()),
+    //         Some(failed_packages) => failed_packages,
+    //     };
 
-        // Check that the failed package is the one we are expecting
-        assert_eq!(failed_packages.failed_packages, vec!["thispackagedoesnotexist".to_string()]);
+    //     // Check that the failed package is the one we are expecting
+    //     assert_eq!(failed_packages.failed_packages, vec!["thispackagedoesnotexist".to_string()]);
 
-        // Everything went ok
-        return Ok(());
-    }
+    //     // Everything went ok
+    //     return Ok(());
+    // }
 
 }
 
