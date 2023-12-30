@@ -22,17 +22,6 @@
           rustc = rustVersion;
         };
 
-        myRustBuild = rustPlatform.buildRustPackage {
-          pname = "punto";
-          version = "0.1.0";
-          src = ./.; # the folder with the cargo.toml
-          cargoLock.lockFile = ./Cargo.lock;
-
-          # This is needed for reqwest crate
-          nativeBuildInputs = [ pkgs.pkg-config ]; # just for the host building the package
-          buildInputs = [ pkgs.openssl ]; # packages needed by the consumer
-        };
-
       in
       {
 
@@ -57,6 +46,17 @@
           '';
         };
 
-        defaultPackage = myRustBuild;
+        defaultPackage = rustPlatform.buildRustPackage {
+          pname = "punto";
+          version = "0.1.0";
+          src = ./.; # the folder with the cargo.toml
+          cargoLock.lockFile = ./Cargo.lock;
+
+          # This is needed for reqwest crate
+          nativeBuildInputs = [ pkgs.pkg-config ]; # just for the host building the package
+          buildInputs = [ pkgs.openssl ]; # packages needed by the consumer
+          checkType = "debug";
+        };
+
       });
 }
