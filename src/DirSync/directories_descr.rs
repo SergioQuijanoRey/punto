@@ -1,7 +1,8 @@
-use std::path::Path;
+use std::path::PathBuf;
 
 use crate::DirSync::dir_block::{DirBlock, DirFileType};
 use lib_fileops::{join_two_paths, sync_dir, sync_file, get_dir_diff};
+use lib_fileops::sync_options::SyncOptions;
 use anyhow::Context;
 
 /// Represent the dir structure that we want to manage
@@ -41,14 +42,16 @@ impl DirectoriesDescr {
             let to = &join_two_paths(&self.system_base, &dir_block.system_path());
             println!("==> Downloading {} to {}", from, to);
 
-            let ignore_files = &dir_block.ignore_files();
+            let sync_options = SyncOptions::builder()
+                .exclude_patterns(dir_block.ignore_files())
+                .build();
 
             // TODO -- DESIGN -- should this function return an error?
             match &dir_block.sync_type() {
                 DirFileType::File => sync_file(from, to)
                     .context(format!("Could not sync file from {} to {}", from, to))
                     .unwrap(),
-                DirFileType::Dir => sync_dir(from, to, ignore_files, false)
+                DirFileType::Dir => sync_dir(PathBuf::from(from), PathBuf::from(to), sync_options)
                     .context(format!("Could not sync dir from {} to {}", from, to))
                     .unwrap(),
             };
@@ -66,14 +69,16 @@ impl DirectoriesDescr {
             let from = &join_two_paths(&self.system_base, &dir_block.system_path());
             println!("==> Uploading {} to {}", from, to);
 
-            let ignore_files = &dir_block.ignore_files();
+            let sync_options = SyncOptions::builder()
+                .exclude_patterns(dir_block.ignore_files())
+                .build();
 
             // TODO -- DESIGN -- should this function return an error?
             match &dir_block.sync_type() {
                 DirFileType::File => sync_file(from, to)
                     .context(format!("Could not sync file from {} to {}", from, to))
                     .unwrap(),
-                DirFileType::Dir => sync_dir(from, to, ignore_files, false)
+                DirFileType::Dir => sync_dir(PathBuf::from(from), PathBuf::from(to), sync_options)
                     .context(format!("Could not sync dir from {} to {}", from, to))
                     .unwrap(),
             };
