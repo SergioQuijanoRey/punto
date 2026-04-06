@@ -2,27 +2,13 @@
 
 ## Relevant features
 
-* With version control in mind
-* No symlinks to manage the dotfiles, all copy from/to the repo/system
-* All actions performed with the same cli app
-* Heavily inspired on [dotbot](https://github.com/anishathalye/dotbot)
-* All actions that can be performed will be described in `yaml` config files that punto reads and executes
-    * Therefore, you can create your own structures as you like, no fixed structure imposed to you
-* This project is used on [my personal dotfiles](https://github.com/sergioquijanorey/dotfiles)
-* **Not stable at the moment**. See the TODO list at the end.
+Manage the bidirectional synchronization of your dotfiles between your git repository and your local system.
 
-## Actions that you can perform with punto
-
-* Create a directory structure
-* Sync dotfiles from repo to system
-* Sync dotfiles from system to repo
-* Install packages
-    * With different package managers in mind
-* Execute custom shell scripts
-
-## Actions that you might be able to do in the future
-
-* Test that your dotfiles can be installed inside an isolated container
+- With version control in mind.
+- No symlinks to manage the dotfiles, all copy from/to the repo/system.
+- Heavily inspired on [dotbot](https://github.com/anishathalye/dotbot)
+- This project is used on [my personal dotfiles](https://github.com/sergioquijanorey/dotfiles)
+- **Not stable at the moment**. See the TODO list at the end.
 
 ## Usage
 
@@ -39,95 +25,13 @@ FLAGS:
     -V, --version    Prints version information
 
 OPTIONS:
+        --check <yaml_file>       Checks for dir sync problems. Searches for files deleted in a repo (or system) dir
+                                  that are still present in their system (or repo) dir
     -d, --download <yaml_file>    Syncs files and dirs from repo to your system
-    -i, --install <yaml_file>     Installs packages from yaml file
-    -s, --shell <yaml_file>       Launchs shell commands from yaml file
     -u, --upload <yaml_file>      Syncs files and dirs from your system to repo
 ~~~
 
 ## Examples
-
-### `shell.yaml`
-
-Run `punto --shell shell.yaml`
-
-~~~yaml
-list_dir:
-    description: List this project using exa
-    quiet: false
-    commands:
-        - exa -T /home/sergio/GitProjects/punto/src/
-    sudo: false
-
-cat some file:
-    description: Cat some file
-    commands:
-        - cat /home/sergio/.bashrc
-
-bat some file:
-    description: Cat with bat
-    commands:
-        - bat /home/sergio/.bashrc
-
-htop which is interactive:
-    commands:
-        - htop
-
-Git with colors:
-    commands:
-        - git log --oneline
-
-More than one command:
-    description: This is other proof of concept
-    quiet: true
-    commands:
-        - echo "This is a command"
-        - echo "This is other command"
-        - echo "More commands yay"
-    sudo: true
-install other:
-    description: This is other proof of concept
-    quiet: true
-    commands:
-        - paru -S spotify
-    sudo: true
-~~~
-
-### `packages.yaml`
-
-Run `punto --install packages.yaml`
-
-~~~yaml
-common:
-    install_command: pacman -S --noconfirm
-    sudo: true
-    packages:
-        - git
-        - htop
-pacman:
-    install_command: pacman -S --noconfirm
-    sudo: true
-    packages:
-        - yay
-        - sudo
-        - base-devel
-        - rsync
-        - cronie
-        - alacritty               # Preferred terminal
-        - screen                  # For launching apps in the background
-        - exa                     # Good replacement for ls and tree (exa -T)
-        - fd                      # Good replacement for find
-aur:
-    install_command: paru -S --noconfirm
-    sudo: false
-    packages:
-        - bat         # A better cat alternative
-        - bottom      # A better top alternative
-
-        # Others
-        #===============================================================================
-        - spotify
-~~~
 
 ### `directories.yaml`
 
@@ -152,4 +56,4 @@ directories:
 
 # TODOs
 
-* See [issues](https://github.com/SergioQuijanoRey/punto/issues) for all bugs and feature requests
+- See [issues](https://github.com/SergioQuijanoRey/punto/issues) for all bugs and feature requests
