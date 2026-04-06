@@ -1,7 +1,5 @@
-mod Commands;
 mod ArgParser;
 mod YamlProcessor;
-mod Installer;
 mod DirSync;
 
 fn main() {
