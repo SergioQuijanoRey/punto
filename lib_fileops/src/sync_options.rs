@@ -110,4 +110,12 @@ impl SyncOptions {
     pub fn builder() -> SyncOptionsBuilder {
         SyncOptionsBuilder::new()
     }
+
+    pub fn delete_files_destination(&self) -> bool {
+        self.delete_files_destination
+    }
+
+    pub fn exclude_patterns(&self) -> Option<&Vec<String>> {
+        self.exclude_patterns.as_ref()
+    }
 }

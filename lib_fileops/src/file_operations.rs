@@ -30,62 +30,87 @@ fn add_last_slash_to_path(path: &str) -> String {
 }
 
 pub fn sync_dir(from: PathBuf, to: PathBuf, sync_options: SyncOptions) -> anyhow::Result<()> {
-    todo!()
+    let empty = Vec::new();
+    let excludes: &[String] = sync_options
+        .exclude_patterns()
+        .map(|v| v.as_slice())
+        .unwrap_or(&empty);
+
+    fs::create_dir_all(&to).with_context(|| format!("Cannot create destination dir {:?}", to))?;
+
+    copy_dir_recursive(&from, &to, &from, excludes)?;
+
+    if sync_options.delete_files_destination() {
+        remove_extra_files(&from, &to, &to)?;
+    }
+
+    Ok(())
 }
 
-/// Syncs two paths
-/// `ignore_paths` can be both file and dir paths
-/// `ignore_paths` must be relative paths based on `from` path
-///
-/// If `remove_files` is true, files and dirs that are not present in `from` path but are present
-/// in `to` path will be removed
-///
-// TODO -- we're using rsync to do this, move that to native rust code
-pub fn old_sync_dir(
-    from: &str,
-    to: &str,
-    ignore_paths: &Vec<String>,
-    remove_files: bool,
+fn copy_dir_recursive(
+    root_from: &Path,
+    root_to: &Path,
+    current_from: &Path,
+    excludes: &[String],
 ) -> anyhow::Result<()> {
-    // For using rsync, last char in the paths must be /
-    // So make some checks and do the conversion if they fail
-    // i.e. some/path -> some/path/
-    let from = add_last_slash_to_path(&from);
-    let to = add_last_slash_to_path(&to);
+    for entry in
+        fs::read_dir(current_from).with_context(|| format!("Cannot read dir {:?}", current_from))?
+    {
+        let entry = entry?;
+        let path = entry.path();
 
-    // Build a bash command based on rsync to perform the operation
-    // This has to be done in four steps due to ignore_files and remove_files nature
+        // Skip the destination tree if it lives inside the source tree
+        if path.starts_with(root_to) {
+            continue;
+        }
 
-    // Step 1: create the base of the command string
-    let mut command_content = format!("rsync -zaP ");
+        let relative = path
+            .strip_prefix(root_from)
+            .context("Could not strip prefix")?;
+        let rel_str = relative.to_str().context("Non-UTF-8 path")?;
 
-    // Step 2: add this flag, so rsync creates the necessary dirs if they don't
-    // exist
-    command_content.push_str("--mkpath ");
+        let excluded = excludes
+            .iter()
+            .any(|p| rel_str == p.as_str() || rel_str.starts_with(&format!("{}/", p)));
+        if excluded {
+            continue;
+        }
 
-    // Step 3: check if we want to remove files
-    if remove_files == true {
-        command_content.push_str("--delete ");
-    }
-
-    // Step 4: add the ignored files
-    if ignore_paths.is_empty() == false {
-        for excluded_file in ignore_paths {
-            command_content.push_str(&format!("--exclude {excluded_file} "));
+        let dest = root_to.join(relative);
+        if path.is_dir() {
+            fs::create_dir_all(&dest).with_context(|| format!("Cannot create dir {:?}", dest))?;
+            copy_dir_recursive(root_from, root_to, &path, excludes)?;
+        } else {
+            if let Some(parent) = dest.parent() {
+                fs::create_dir_all(parent)?;
+            }
+            fs::copy(&path, &dest)
+                .with_context(|| format!("Cannot copy {:?} -> {:?}", path, dest))?;
         }
     }
+    Ok(())
+}
 
-    // Step 5: specify source and destination
-    command_content.push_str(&format!("{from} {to}"));
+fn remove_extra_files(root_from: &Path, root_to: &Path, current_to: &Path) -> anyhow::Result<()> {
+    for entry in
+        fs::read_dir(current_to).with_context(|| format!("Cannot read dir {:?}", current_to))?
+    {
+        let entry = entry?;
+        let path = entry.path();
+        let relative = path.strip_prefix(root_to).context("strip prefix")?;
+        let source_counterpart = root_from.join(relative);
 
-    let quiet = false;
-    let sudo = false;
-    // let command = SingleCommand::new(command_content, quiet, sudo)
-    //     .context("Could not create the command to use rsync")?;
-
-    // // Run the command
-    // command.run().context("Rsync command failed at runtime")?;
-    return Ok(());
+        if !source_counterpart.exists() {
+            if path.is_dir() {
+                fs::remove_dir_all(&path)?;
+            } else {
+                fs::remove_file(&path)?;
+            }
+        } else if path.is_dir() {
+            remove_extra_files(root_from, root_to, &path)?;
+        }
+    }
+    Ok(())
 }
 
 /// Copies one file to another location
@@ -213,6 +238,9 @@ mod tests {
     use std::fs;
     use std::path::Path;
 
+    use crate::sync_options::SyncOptions;
+    use std::path::PathBuf;
+
     use super::{
         add_last_slash_to_path, get_dir_diff, join_two_paths, sanitize_relative_path, sync_dir,
         sync_file,
@@ -315,12 +343,10 @@ mod tests {
             .expect("Could not create basic file structure for the test");
 
         // Copy now to another path
-        let from = base_path;
+        let from = PathBuf::from(base_path);
         let to = Path::new(base_path).join("pruebas");
-        let ignore_files = vec![];
-        let remove_files = false;
-        sync_dir(from, to.to_str().unwrap(), &ignore_files, remove_files)
-            .expect("Copy operation failed to run");
+        let sync_options = SyncOptions::builder().build();
+        sync_dir(from, to, sync_options).expect("Copy operation failed to run");
 
         // Make some checks about the dirs
         assert!(
@@ -378,14 +404,15 @@ mod tests {
             .expect("Could not create basic file structure for the test");
 
         // Copy now to another path
-        let from = base_path;
-
-        let binding = Path::new(base_path).join("pruebas");
-        let to = binding.to_str().unwrap();
-
-        let ignore_files = vec!["src/first.rs".to_string(), "src/second.rs".to_string()];
-        let remove_files = false;
-        sync_dir(from, to, &ignore_files, remove_files).expect("Copy operation failed to run");
+        let from = PathBuf::from(base_path);
+        let to = Path::new(base_path).join("pruebas");
+        let sync_options = SyncOptions::builder()
+            .exclude_patterns(vec![
+                "src/first.rs".to_string(),
+                "src/second.rs".to_string(),
+            ])
+            .build();
+        sync_dir(from, to, sync_options).expect("Copy operation failed to run");
 
         // Make some checks about the dirs
         assert!(
@@ -471,6 +498,7 @@ mod tests {
         // Start creating a basic file structure
         // If a test fails, this structure might be already created, so delete if first
         remove_basic_file_structure(base_path);
+        remove_basic_file_structure(other_path);
         create_basic_file_structure(base_path)
             .expect("Could not create basic file structure for the test");
 
