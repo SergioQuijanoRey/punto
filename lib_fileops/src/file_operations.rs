@@ -10,25 +10,6 @@ use thiserror::Error;
 
 use crate::sync_options::SyncOptions;
 
-/// Gets a path and adds a last "/" if it is not present
-/// This is needed for the rsync command
-///
-/// For example:
-/// some/path -> some/path/
-/// other/path/ -> do nothing
-fn add_last_slash_to_path(path: &str) -> String {
-    let last_char = path.chars().last().unwrap();
-
-    if last_char == '/' {
-        return path.to_string();
-    }
-
-    let mut transformted_path = path.to_string();
-    transformted_path.push('/');
-
-    return transformted_path;
-}
-
 pub fn sync_dir(from: PathBuf, to: PathBuf, sync_options: SyncOptions) -> anyhow::Result<()> {
     let empty = Vec::new();
     let excludes: &[String] = sync_options
@@ -241,10 +222,7 @@ mod tests {
     use crate::sync_options::SyncOptions;
     use std::path::PathBuf;
 
-    use super::{
-        add_last_slash_to_path, get_dir_diff, join_two_paths, sanitize_relative_path, sync_dir,
-        sync_file,
-    };
+    use super::{get_dir_diff, join_two_paths, sanitize_relative_path, sync_dir, sync_file};
 
     #[test]
     fn test_join_two_paths_basic() {
@@ -273,23 +251,6 @@ mod tests {
         let computed = join_two_paths("some/path/", "./relative/path");
         let expected = "some/path/relative/path";
         assert_eq!(expected, computed, "Relative paths are not joined properly");
-    }
-
-    #[test]
-    fn test_add_last_slash_to_path() {
-        let original_path = "some/path";
-        let transformted_path = add_last_slash_to_path(original_path);
-        assert_eq!(
-            transformted_path, "some/path/",
-            "add_last_slash_to_path did not added last slash"
-        );
-
-        let original_path = "some/path/";
-        let transformted_path = add_last_slash_to_path(original_path);
-        assert_eq!(
-            transformted_path, "some/path/",
-            "add_last_slash_to_path changed a path that was correct at first"
-        );
     }
 
     #[test]
