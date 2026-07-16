@@ -1,10 +1,10 @@
-pub mod directories_descr;
 pub mod dir_block;
+pub mod directories_descr;
 mod parsers;
 use std::path::Path;
 
-use parsers::{YamlDirParser, ParseDirectories};
 use anyhow::Context;
+use parsers::{ParseDirectories, YamlDirParser};
 
 use crate::DirSync::parsers::TomlDirParser;
 
@@ -17,14 +17,22 @@ enum SupportedFileFormats {
 fn get_file_format(file_path: &str) -> anyhow::Result<SupportedFileFormats> {
     let extension = Path::new(file_path)
         .extension()
-        .context(format!("Could not get the file extension of the file {}", file_path))?
+        .context(format!(
+            "Could not get the file extension of the file {}",
+            file_path
+        ))?
         .to_str()
         .context("Could not convert file extension object to &str")?;
 
     let format: SupportedFileFormats = match extension {
         "yaml" => SupportedFileFormats::Yaml,
         "toml" => SupportedFileFormats::Toml,
-        _ => return anyhow::bail!(format!("Extension for {} is not supported in our program", file_path)),
+        _ => {
+            return anyhow::bail!(format!(
+                "Extension for {} is not supported in our program",
+                file_path
+            ))
+        }
     };
 
     return Ok(format);
@@ -44,8 +52,8 @@ pub fn handle_download(file_path: &str) {
         SupportedFileFormats::Yaml => YamlDirParser::parse_file(file_path),
         SupportedFileFormats::Toml => TomlDirParser::parse_file(file_path),
     }
-        .context("Could not parse file contents to rust object properly :(")
-        .unwrap();
+    .context("Could not parse file contents to rust object properly :(")
+    .unwrap();
 
     // Download
     dir_descr.download_from_repo_to_system();
@@ -63,9 +71,8 @@ pub fn handle_upload(file_path: &str) {
         SupportedFileFormats::Yaml => YamlDirParser::parse_file(file_path),
         SupportedFileFormats::Toml => TomlDirParser::parse_file(file_path),
     }
-        .context("Could not parse file contents to rust object properly :(")
-        .unwrap();
-
+    .context("Could not parse file contents to rust object properly :(")
+    .unwrap();
 
     // Upload
     dir_descr.upload_from_system_to_repo();
@@ -82,9 +89,8 @@ pub fn handle_check(file_path: &str) {
         SupportedFileFormats::Yaml => YamlDirParser::parse_file(file_path),
         SupportedFileFormats::Toml => TomlDirParser::parse_file(file_path),
     }
-        .context("Could not parse file contents to rust object properly :(")
-        .unwrap();
-
+    .context("Could not parse file contents to rust object properly :(")
+    .unwrap();
 
     // Check directories specified in the description
     dir_descr.check();

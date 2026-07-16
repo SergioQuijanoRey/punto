@@ -17,5 +17,10 @@ serde = { version = "1.0", features = ["derive"] }
 yaml-rust = "0.4.5"
 toml = "0.7.3"
 
-lib_commands = { path = "./lib_commands" }
 lib_fileops = { path = "./lib_fileops" }
+
+[workspace]
+members = ["lib_fileops"]
+
+# Default members is needed so `cargo test` also runs the tests inside `lib_fileops`
+default-members = [".", "lib_fileops"]
