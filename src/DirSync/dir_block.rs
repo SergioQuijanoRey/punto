@@ -26,6 +26,9 @@ pub struct DirBlock {
     /// Wether we are working with files or directories
     sync_type: DirFileType,
 
+    /// TODO -- this can work for dirs, we should not use trailing '/' and in file lib we are using
+    /// `exclude_patterns` instead of `ignore_files`, which is actually a better name
+    ///
     /// Files to ignore
     /// Should be relative to `repo_path`
     /// For example, 'file.txt' instead of '/path/to/repo/ignore_files'
