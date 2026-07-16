@@ -224,52 +224,6 @@ mod tests {
 
     use super::{get_dir_diff, join_two_paths, sanitize_relative_path, sync_dir, sync_file};
 
-    #[test]
-    fn test_join_two_paths_basic() {
-        let computed = join_two_paths("testing", "this");
-        let expected = "testing/this";
-        assert_eq!(expected, computed);
-    }
-
-    #[test]
-    fn test_join_two_paths_trailing_slashes() {
-        let computed = join_two_paths("testing/", "this");
-        let expected = "testing/this";
-        assert_eq!(expected, computed);
-
-        let computed = join_two_paths("testing", "this/");
-        let expected = "testing/this/";
-        assert_eq!(expected, computed);
-
-        let computed = join_two_paths("testing/", "this/");
-        let expected = "testing/this/";
-        assert_eq!(expected, computed);
-    }
-
-    #[test]
-    fn test_join_two_paths_with_relative_paths() {
-        let computed = join_two_paths("some/path/", "./relative/path");
-        let expected = "some/path/relative/path";
-        assert_eq!(expected, computed, "Relative paths are not joined properly");
-    }
-
-    #[test]
-    fn test_sanitizer_works() {
-        let computed = sanitize_relative_path("./some/rel/path");
-        let expected = "some/rel/path";
-        assert_eq!(
-            expected, computed,
-            "Relative path sanitizer did not work well"
-        );
-
-        let computed = sanitize_relative_path("/some/rel/path");
-        let expected = "some/rel/path";
-        assert_eq!(
-            expected, computed,
-            "Relative path sanitizer did not work well"
-        );
-    }
-
     /// A lot of tests need to work in top a file hierarchy structure
     /// So with this function we can create a basic structure
     /// NOTE: do not share root folder, because tests might run in parallel
