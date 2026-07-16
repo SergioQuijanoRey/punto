@@ -2,6 +2,7 @@
 /// create dirs, ...
 use anyhow::Context;
 use folder_compare::FolderCompare;
+use globset::{Glob, GlobSet, GlobSetBuilder};
 use std::{
     fs,
     path::{Path, PathBuf},
@@ -19,7 +20,18 @@ pub fn sync_dir(from: PathBuf, to: PathBuf, sync_options: SyncOptions) -> anyhow
 
     fs::create_dir_all(&to).with_context(|| format!("Cannot create destination dir {:?}", to))?;
 
-    copy_dir_recursive(&from, &to, &from, excludes)?;
+    let mut builder = GlobSetBuilder::new();
+    for pattern in excludes {
+        builder.add(
+            Glob::new(pattern)
+                .with_context(|| format!("Invalid exclude pattern {:?}", pattern))?,
+        );
+    }
+    let exclude_set = builder
+        .build()
+        .context("Could not build exclude pattern set")?;
+
+    copy_dir_recursive(&from, &to, &from, &exclude_set)?;
 
     if sync_options.delete_files_destination() {
         remove_extra_files(&from, &to, &to)?;
@@ -32,7 +44,7 @@ fn copy_dir_recursive(
     root_from: &Path,
     root_to: &Path,
     current_from: &Path,
-    excludes: &[String],
+    excludes: &GlobSet,
 ) -> anyhow::Result<()> {
     for entry in
         fs::read_dir(current_from).with_context(|| format!("Cannot read dir {:?}", current_from))?
@@ -50,10 +62,7 @@ fn copy_dir_recursive(
             .context("Could not strip prefix")?;
         let rel_str = relative.to_str().context("Non-UTF-8 path")?;
 
-        let excluded = excludes
-            .iter()
-            .any(|p| rel_str == p.as_str() || rel_str.starts_with(&format!("{}/", p)));
-        if excluded {
+        if excludes.is_match(rel_str) {
             continue;
         }
 
