@@ -8,11 +8,6 @@ pub enum CompareStrategy {
     Checksum,
 }
 
-pub enum DeleteStrategy {
-    Remove,
-    MoveToPath(PathBuf),
-}
-
 pub struct SyncOptions {
     /// Wether or not remove files that are present in destination dir but are
     /// not present in the origin dir
@@ -21,7 +16,6 @@ pub struct SyncOptions {
     compare_strategy: CompareStrategy,
     exclude_patterns: Option<Vec<String>>,
     dry_run: bool,
-    delete_strategy: DeleteStrategy,
     parallel_run: bool,
     include_hidden: bool,
 }
@@ -33,7 +27,6 @@ impl Default for SyncOptions {
             compare_strategy: CompareStrategy::ModifiedTime,
             exclude_patterns: None,
             dry_run: false,
-            delete_strategy: DeleteStrategy::Remove,
             parallel_run: false,
             include_hidden: false,
         }
@@ -83,11 +76,6 @@ impl SyncOptionsBuilder {
 
     pub fn dry_run(mut self, value: bool) -> Self {
         self.options.dry_run = value;
-        self
-    }
-
-    pub fn delete_strategy(mut self, strategy: DeleteStrategy) -> Self {
-        self.options.delete_strategy = strategy;
         self
     }
 
