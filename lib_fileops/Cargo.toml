@@ -9,3 +9,6 @@ edition = "2021"
 anyhow = "1.0.70"
 thiserror = "1.0"
 folder_compare = "0.4"
+
+[dev-dependencies]
+tempfile = "3.27.0"
