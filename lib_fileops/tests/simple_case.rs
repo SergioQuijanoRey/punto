@@ -13,6 +13,7 @@ fn test_test() {
     let sync_options = SyncOptions::default();
     file_operations::sync_dir(from, to, sync_options).expect("sync_dir failed");
 
+    // Check the expected file structure
     assert!(handler.dir.path().join("destination").exists());
     for file in ["file1.txt", "file2.txt"] {
         assert!(handler.dir.path().join("destination").join(file).exists());
