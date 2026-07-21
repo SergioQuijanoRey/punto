@@ -33,15 +33,25 @@ pub struct DirBlock {
     /// Should be relative to `repo_path`
     /// For example, 'file.txt' instead of '/path/to/repo/ignore_files'
     ignore_files: Vec<String>,
+
+    /// Whether or not we want to delete files at destination that are not present in origin
+    delete_files_at_destination: bool,
 }
 
 impl DirBlock {
-    pub fn new(repo_path: String, system_path: String, sync_type: DirFileType, ignore_files: Vec<String>) -> Self {
+    pub fn new(
+        repo_path: String,
+        system_path: String,
+        sync_type: DirFileType,
+        ignore_files: Vec<String>,
+        delete_files_at_destination: bool,
+    ) -> Self {
         return DirBlock {
             repo_path: sanitize_relative_path(&repo_path),
             system_path: sanitize_relative_path(&system_path),
             sync_type,
             ignore_files,
+            delete_files_at_destination,
         };
     }
 
@@ -61,3 +71,7 @@ impl DirBlock {
         return self.ignore_files.clone();
     }
 
+    pub fn delete_files_at_destination(&self) -> bool {
+        return self.delete_files_at_destination;
+    }
+}

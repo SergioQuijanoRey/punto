@@ -46,6 +46,7 @@ impl DirectoriesDescr {
 
             let sync_options = SyncOptions::builder()
                 .exclude_patterns(dir_block.ignore_files())
+                .delete_files_destination(dir_block.delete_files_at_destination())
                 .build();
 
             // TODO -- DESIGN -- should this function return an error?
@@ -72,6 +73,7 @@ impl DirectoriesDescr {
 
             let sync_options = SyncOptions::builder()
                 .exclude_patterns(dir_block.ignore_files())
+                .delete_files_destination(dir_block.delete_files_at_destination())
                 .build();
 
             // TODO -- DESIGN -- should this function return an error?

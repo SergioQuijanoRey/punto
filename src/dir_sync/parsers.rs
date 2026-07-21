@@ -132,11 +132,15 @@ impl ParseDirectories for YamlDirParser {
                     .map(|item| item.as_str().unwrap().to_string())
                     .collect();
 
+                let delete_files_at_destination: bool =
+                    value["delete_files_destination"].as_bool().unwrap_or(false);
+
                 dir_descr.push(DirBlock::new(
                     repo_path.to_string(),
                     system_path.to_string(),
                     sync_type,
                     ignore_files,
+                    delete_files_at_destination,
                 ));
             }
         }
@@ -162,6 +166,7 @@ struct Entry {
     system_path: String,
     sync_type: Option<String>,
     ignore_paths: Option<Vec<String>>,
+    delete_files_destination: Option<bool>,
 }
 
 /// Errors that can happen when parsing a intermediate representation for TOML
@@ -193,6 +198,9 @@ impl TryFrom<DirectoriesDescrTomlRepresentation> for DirectoriesDescr {
 
             // Get the list of ignored files
             let ignored_files = entry.ignore_paths.unwrap_or(vec![]);
+
+            // Get whether or not we have to delete files at destination
+            let delete_at_destination = entry.delete_files_destination.unwrap_or(false);
 
             let curr_block = DirBlock::new(
                 entry.repo_path,
