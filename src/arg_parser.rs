@@ -1,6 +1,5 @@
 /// Parses the cli arguments given by the user using `clap` crate
-
-use crate::DirSync;
+use crate::dir_sync;
 use clap::{App, Arg, ArgMatches};
 
 /// Parses the args and launchs commands depending on user input
@@ -11,7 +10,7 @@ pub fn parse_args_and_launch_commands() {
 
 /// Generates the matches structure, defining inputs by hand
 /// Also metainformation about the cli app is set here
-fn generate_matches() -> ArgMatches<'static>{
+fn generate_matches() -> ArgMatches<'static> {
     let app = App::new("punto -- dotfiles manager")
         .version("0.1")
         .author("Sergio Quijano <sergiquijano@gmail.com>")
@@ -50,7 +49,6 @@ fn generate_matches() -> ArgMatches<'static>{
 
     let matches = app.get_matches();
     return matches;
-
 }
 
 /// Calls the functions given the cli parameters
@@ -61,9 +59,9 @@ fn call_handlers(matches: ArgMatches) {
             let yaml_file = matches.value_of(arg_name).unwrap();
 
             match arg_name {
-                &"download command" => DirSync::handle_download(yaml_file),
-                &"upload command" => DirSync::handle_upload(yaml_file),
-                &"check dir sync problems" => DirSync::handle_check(yaml_file),
+                &"download command" => dir_sync::handle_download(yaml_file),
+                &"upload command" => dir_sync::handle_upload(yaml_file),
+                &"check dir sync problems" => dir_sync::handle_check(yaml_file),
                 _ => unreachable!(),
             }
         }

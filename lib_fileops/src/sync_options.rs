@@ -1,6 +1,4 @@
 /// Represent the options in the dir sync process
-use std::path::PathBuf;
-
 pub enum CompareStrategy {
     ModifiedTime,
     Size,

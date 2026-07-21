@@ -1,47 +1,38 @@
 use std::collections::HashMap;
-use std::convert::{TryInto, TryFrom};
+use std::convert::TryFrom;
 use std::fs;
 
+use serde::Deserialize;
+use thiserror::Error;
 /// Module where we parse yaml files to Rust structs that our program can use
 /// Also, more than one parser can be implemented here
 /// For example, parser for yaml files, for toml files, ...
-
 // TODO -- This module is very messy
-
 use yaml_rust::Yaml;
-use serde::Deserialize;
-use thiserror::Error;
 
-use crate::DirSync::dir_block::{DirBlock, DirFileType};
-use crate::YamlProcessor;
-use crate::DirSync::directories_descr::DirectoriesDescr;
-
+use crate::dir_sync::dir_block::{DirBlock, DirFileType};
+use crate::dir_sync::directories_descr::DirectoriesDescr;
+use crate::yaml_processor;
 
 // TODO -- DESING -- we are holding some errors as strings, which is kinda weird
 #[derive(Debug, Error)]
 pub enum ParsingError {
-
     #[error("Could not read the contents of the file")]
-    CouldNotReadContentsOfFile{
-        reason: String,
-    },
+    CouldNotReadContentsOfFile { reason: String },
 
     #[error("Could not parse file {file} to a rust object, reason was:\n{reason}")]
-    CouldNotParseFile{
-        file: String,
-        reason: String,
-    },
+    CouldNotParseFile { file: String, reason: String },
 
     #[error("Could not get section {section_name} at block {dir_block_name:?} from the parsed file\nCheck that the contents of the block are properly indented")]
-    SectionNotFound{
+    SectionNotFound {
         section_name: String,
         dir_block_name: Option<String>,
     },
 
-    #[error("Could not convert intermediate representation to DirectoriesDescr, reason was:\n{reason}")]
-    IntermediateReprToFinalRepr{
-        reason: String
-    },
+    #[error(
+        "Could not convert intermediate representation to DirectoriesDescr, reason was:\n{reason}"
+    )]
+    IntermediateReprToFinalRepr { reason: String },
 }
 
 /// All parsers must take a file path and return a `DirectoriesDescr`
@@ -53,14 +44,13 @@ pub trait ParseDirectories {
 pub struct YamlDirParser;
 impl ParseDirectories for YamlDirParser {
     fn parse_file(path: &str) -> Result<DirectoriesDescr, ParsingError> {
-
         // Parse the yaml file to a Yaml rust object
         // TODO -- error handling should be easier
-        let parsed_contents = YamlProcessor::parse_yaml(path);
+        let parsed_contents = yaml_processor::parse_yaml(path);
         let parsed_contents = match parsed_contents {
             Ok(contents) => contents,
             Err(err) => {
-                return Err(ParsingError::CouldNotParseFile{
+                return Err(ParsingError::CouldNotParseFile {
                     file: path.to_string(),
                     reason: format!("{}", err),
                 });
@@ -71,14 +61,14 @@ impl ParseDirectories for YamlDirParser {
         let mut dir_descr = DirectoriesDescr::new(
             parsed_contents["repo_base"]
                 .as_str()
-                .ok_or(ParsingError::SectionNotFound{
+                .ok_or(ParsingError::SectionNotFound {
                     section_name: "repo_base".to_string(),
                     dir_block_name: None,
                 })?
                 .to_string(),
             parsed_contents["system_base"]
                 .as_str()
-                .ok_or(ParsingError::SectionNotFound{
+                .ok_or(ParsingError::SectionNotFound {
                     section_name: "system_base".to_string(),
                     dir_block_name: None,
                 })?
@@ -87,12 +77,13 @@ impl ParseDirectories for YamlDirParser {
         );
 
         // Yaml section of files
-        let dir_blocks = parsed_contents["directories"]
-            .as_vec()
-            .ok_or(ParsingError::SectionNotFound{
-                section_name: "directories (vector)".to_string(),
-                dir_block_name: None,
-            })?;
+        let dir_blocks =
+            parsed_contents["directories"]
+                .as_vec()
+                .ok_or(ParsingError::SectionNotFound {
+                    section_name: "directories (vector)".to_string(),
+                    dir_block_name: None,
+                })?;
 
         for dir_block in dir_blocks {
             // We ignore the name of the block
@@ -107,34 +98,39 @@ impl ParseDirectories for YamlDirParser {
 
                 let repo_path = value["repo_path"]
                     .as_str()
-                    .ok_or(ParsingError::SectionNotFound{
-                        section_name: "repo_path".to_string(),
-                        dir_block_name: Some(
-                            block_name
-                                .as_str()
-                                .unwrap_or_else(|| "Could not get the name of the dir block that caused the failure")
-                                .to_string()
-                        )
-                    })?;
+                    .ok_or(ParsingError::SectionNotFound {
+                    section_name: "repo_path".to_string(),
+                    dir_block_name: Some(
+                        block_name
+                            .as_str()
+                            .unwrap_or_else(|| {
+                                "Could not get the name of the dir block that caused the failure"
+                            })
+                            .to_string(),
+                    ),
+                })?;
 
                 let system_path = value["system_path"]
                     .as_str()
-                    .ok_or(ParsingError::SectionNotFound{
-                        section_name: "system_path".to_string(),
-                        dir_block_name: Some(
-                            block_name
-                                .as_str()
-                                .unwrap_or_else(|| "Could not get the name of the dir block that caused the failure")
-                                .to_string()
-                        )
-                    })?;
+                    .ok_or(ParsingError::SectionNotFound {
+                    section_name: "system_path".to_string(),
+                    dir_block_name: Some(
+                        block_name
+                            .as_str()
+                            .unwrap_or_else(|| {
+                                "Could not get the name of the dir block that caused the failure"
+                            })
+                            .to_string(),
+                    ),
+                })?;
 
-                let empty_vec : Vec<Yaml> = Vec::new();
-                let ignore_files = value["ignore_files"].
-                    as_vec().
-                    unwrap_or(&empty_vec).
-                    into_iter().
-                    map(|item| item.as_str().unwrap().to_string()).collect();
+                let empty_vec: Vec<Yaml> = Vec::new();
+                let ignore_files = value["ignore_files"]
+                    .as_vec()
+                    .unwrap_or(&empty_vec)
+                    .into_iter()
+                    .map(|item| item.as_str().unwrap().to_string())
+                    .collect();
 
                 dir_descr.push(DirBlock::new(
                     repo_path.to_string(),
@@ -157,7 +153,7 @@ struct DirectoriesDescrTomlRepresentation {
     system_base: String,
 
     #[serde(flatten)]
-    entries: HashMap<String, Entry>
+    entries: HashMap<String, Entry>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -174,7 +170,6 @@ struct Entry {
 pub enum TomlToDirDescrError {
     #[error("Sync type is neither 'file' or 'dir', it is {0}")]
     BadSyncType(String),
-
 }
 
 /// Implement the conversion from the intermediate representation to the final
@@ -187,8 +182,7 @@ impl TryFrom<DirectoriesDescrTomlRepresentation> for DirectoriesDescr {
 
         // TODO -- might be a good idea to implement `Into<DirBlock> for Entry`
         // because that's what we are doing here
-        for (_, entry) in repr.entries{
-
+        for (_, entry) in repr.entries {
             // Get the sync type for this entry
             let sync_type = entry.sync_type.unwrap_or("file".to_string());
             let sync_type = match sync_type.as_str() {
@@ -205,6 +199,7 @@ impl TryFrom<DirectoriesDescrTomlRepresentation> for DirectoriesDescr {
                 entry.system_path,
                 sync_type,
                 ignored_files,
+                delete_at_destination,
             );
 
             dir_blocks.push(curr_block);
@@ -213,7 +208,7 @@ impl TryFrom<DirectoriesDescrTomlRepresentation> for DirectoriesDescr {
         return Ok(DirectoriesDescr::new(
             repr.repo_base,
             repr.system_base,
-            dir_blocks
+            dir_blocks,
         ));
     }
 }
@@ -222,18 +217,25 @@ impl TryFrom<DirectoriesDescrTomlRepresentation> for DirectoriesDescr {
 pub struct TomlDirParser;
 impl ParseDirectories for TomlDirParser {
     fn parse_file(path: &str) -> Result<DirectoriesDescr, ParsingError> {
-
         // Read the raw data from the given file
-        let data = fs::read_to_string(path)
-            .map_err(|e| ParsingError::CouldNotReadContentsOfFile{reason: format!("{}", e)})?;
+        let data =
+            fs::read_to_string(path).map_err(|e| ParsingError::CouldNotReadContentsOfFile {
+                reason: format!("{}", e),
+            })?;
 
         // Parse that data to a intermediate struct representation
         let intermediate_representation: DirectoriesDescrTomlRepresentation = toml::from_str(&data)
-            .map_err(|e| ParsingError::CouldNotParseFile { file: path.to_string(), reason: format!("{}", e) })?;
+            .map_err(|e| ParsingError::CouldNotParseFile {
+                file: path.to_string(),
+                reason: format!("{}", e),
+            })?;
 
         // Convert the intermediate representation to `DirectoriesDescr` struct
-        let dir_descr = DirectoriesDescr::try_from(intermediate_representation)
-            .map_err(|e| ParsingError::IntermediateReprToFinalRepr { reason: format!("{}", e) })?;
+        let dir_descr = DirectoriesDescr::try_from(intermediate_representation).map_err(|e| {
+            ParsingError::IntermediateReprToFinalRepr {
+                reason: format!("{}", e),
+            }
+        })?;
 
         return Ok(dir_descr);
     }

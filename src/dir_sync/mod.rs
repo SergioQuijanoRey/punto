@@ -6,7 +6,7 @@ use std::path::Path;
 use anyhow::Context;
 use parsers::{ParseDirectories, YamlDirParser};
 
-use crate::DirSync::parsers::TomlDirParser;
+use crate::dir_sync::parsers::TomlDirParser;
 
 #[derive(Debug)]
 enum SupportedFileFormats {
@@ -28,7 +28,7 @@ fn get_file_format(file_path: &str) -> anyhow::Result<SupportedFileFormats> {
         "yaml" => SupportedFileFormats::Yaml,
         "toml" => SupportedFileFormats::Toml,
         _ => {
-            return anyhow::bail!(format!(
+            anyhow::bail!(format!(
                 "Extension for {} is not supported in our program",
                 file_path
             ))
