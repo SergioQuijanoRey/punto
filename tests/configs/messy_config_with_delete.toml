@@ -1,0 +1,9 @@
+# NOTE: use with setup_basic_but_messy_scenario
+repo_base = "{{tmp_dir}}"
+system_base = "{{tmp_dir}}"
+
+[config]
+repo_path = "origin"
+system_path = "destination"
+sync_type = "dir"
+delete_files_destination = true
