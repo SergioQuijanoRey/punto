@@ -1,5 +1,5 @@
 /// Parses the cli arguments given by the user using `clap` crate
-use crate::dir_sync;
+use punto::dir_sync;
 use clap::{App, Arg, ArgMatches};
 
 /// Parses the args and launchs commands depending on user input
