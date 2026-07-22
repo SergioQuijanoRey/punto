@@ -24,3 +24,6 @@ members = ["lib_fileops"]
 
 # Default members is needed so `cargo test` also runs the tests inside `lib_fileops`
 default-members = [".", "lib_fileops"]
+
+[dev-dependencies]
+tempfile = "3.27.0"

@@ -261,6 +261,7 @@ dependencies = [
  "dircpy",
  "lib_fileops",
  "serde",
+ "tempfile",
  "thiserror",
  "toml",
  "yaml-rust",

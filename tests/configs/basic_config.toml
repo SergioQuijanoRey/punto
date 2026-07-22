@@ -1,0 +1,9 @@
+# NOTE: this toml config should always go with
+# `tests/common/mod.rs::setup_basic_scenario()` setup function
+repo_base = "{{tmp_dir}}"
+system_base = "{{tmp_dir}}"
+
+[config]
+repo_path = "origin"
+system_path = "destination"
+sync_type = "dir"
