@@ -22,8 +22,11 @@ pub fn sync_dir(from: PathBuf, to: PathBuf, sync_options: SyncOptions) -> anyhow
 
     let mut builder = GlobSetBuilder::new();
     for pattern in excludes {
+        // Trailing slashes on directory patterns would never match the slash-free relative
+        // paths produced by strip_prefix, so normalize them away before building the glob.
+        let normalized = pattern.trim_end_matches('/');
         builder.add(
-            Glob::new(pattern).with_context(|| format!("Invalid exclude pattern {:?}", pattern))?,
+            Glob::new(normalized).with_context(|| format!("Invalid exclude pattern {:?}", pattern))?,
         );
     }
     let exclude_set = builder
