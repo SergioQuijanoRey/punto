@@ -80,3 +80,36 @@ fn test_filetype_ignore() {
     assert!(!dest.join("src1.rs").exists(), "src1.rs should be ignored");
     assert!(!dest.join("dir1").join("src2.rs").exists(), "dir1/src2.rs should be ignored");
 }
+
+/// Verify that a trailing slash on a directory in `ignore_paths` still ignores it.
+/// This test is expected to fail until the trailing-slash bug is fixed.
+#[test]
+fn test_ignore_dir_with_trailing_slash() {
+    let handler = common::setup_basic_scenario("test_ignore_dir_trailing_slash");
+    let tmp_path_str = handler
+        .dir
+        .path()
+        .to_str()
+        .expect("Could not convert path to string");
+
+    let toml_config_str =
+        fs::read_to_string("./tests/configs/ignore_dir_trailing_slash_config.toml")
+            .expect("Could not read ignore_dir_trailing_slash_config.toml")
+            .replace("{{tmp_dir}}", tmp_path_str);
+    let config_path = handler.dir.path().join("config.toml");
+    fs::write(&config_path, toml_config_str).expect("Could not write config to tmp dir");
+
+    handle_download(
+        config_path
+            .to_str()
+            .expect("Could not convert config path to str"),
+    );
+
+    let dest = handler.dir.path().join("destination");
+
+    for file in ["file1.txt", "file2.txt"] {
+        assert!(dest.join(file).exists(), "{} should exist", file);
+    }
+
+    assert!(!dest.join("dir1").exists(), "dir1 should not be synced when pattern has trailing slash");
+}

@@ -36,6 +36,26 @@ fn test_simple_ignore() {
 }
 
 #[test]
+fn test_simple_ignore_with_trailing_slash() {
+    // Trailing slash on a directory pattern must still exclude that directory.
+    // This test is expected to fail until the bug is fixed.
+    let handler = common::setup_basic_scenario("test_simple_ignore_trailing_slash");
+
+    let from = handler.dir.path().join("origin");
+    let to = handler.dir.path().join("destination");
+    let sync_options = SyncOptionsBuilder::new()
+        .exclude_patterns(vec!["dir1/".into()])
+        .build();
+    file_operations::sync_dir(from, to, sync_options).expect("sync_dir failed");
+
+    for file in ["file1.txt", "file2.txt"] {
+        assert!(handler.dir.path().join("destination").join(file).exists());
+    }
+
+    assert!(!handler.dir.path().join("destination").join("dir1").exists());
+}
+
+#[test]
 fn test_filetype_exclude() {
     // Create the temp file structure
     let handler = common::setup_basic_scenario("test_simple_ignore");
