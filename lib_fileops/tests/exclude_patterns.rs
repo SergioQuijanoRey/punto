@@ -37,8 +37,6 @@ fn test_simple_ignore() {
 
 #[test]
 fn test_simple_ignore_with_trailing_slash() {
-    // Trailing slash on a directory pattern must still exclude that directory.
-    // This test is expected to fail until the bug is fixed.
     let handler = common::setup_basic_scenario("test_simple_ignore_trailing_slash");
 
     let from = handler.dir.path().join("origin");
@@ -64,7 +62,12 @@ fn test_filetype_exclude() {
     let file_path = &handler.dir.path().join("origin").join("src1.rs");
     fs::File::create(file_path).expect("Could not create temp rust file for testing");
 
-    let file_path = &handler.dir.path().join("origin").join("dir1").join("src2.rs");
+    let file_path = &handler
+        .dir
+        .path()
+        .join("origin")
+        .join("dir1")
+        .join("src2.rs");
     fs::File::create(file_path).expect("Could not create temp rust file for testing");
 
     // Sync one dir into another ignoring all rust files with a glob
@@ -94,8 +97,25 @@ fn test_filetype_exclude() {
 
     // Check that ignored files and dirs are not present in the destination but they exist in the origin
     assert!(handler.dir.path().join("origin").join("src1.rs").exists());
-    assert!(!handler.dir.path().join("destination").join("src1.rs").exists());
+    assert!(!handler
+        .dir
+        .path()
+        .join("destination")
+        .join("src1.rs")
+        .exists());
 
-    assert!(handler.dir.path().join("origin").join("dir1").join("src2.rs").exists());
-    assert!(!handler.dir.path().join("destination").join("dir1").join("src2.rs").exists());
+    assert!(handler
+        .dir
+        .path()
+        .join("origin")
+        .join("dir1")
+        .join("src2.rs")
+        .exists());
+    assert!(!handler
+        .dir
+        .path()
+        .join("destination")
+        .join("dir1")
+        .join("src2.rs")
+        .exists());
 }
