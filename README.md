@@ -33,6 +33,35 @@ OPTIONS:
 
 ## Examples
 
+### `ignore_paths` and `delete_files_destination`
+
+`ignore_paths` lists path patterns that are excluded from the sync entirely.
+`delete_files_destination` removes extra files found at the destination that are
+not present in the origin.
+
+When both options are active together, an important rule applies: an ignored
+path is excluded from the sync pass and from the delete pass. If an ignored
+directory happens to already exist at the destination, it is left untouched and
+is **not** deleted, even though `delete_files_destination` is enabled. Only
+non-ignored extra files at the destination are removed.
+
+Example config (`config.toml`):
+
+~~~toml
+repo_base = "/home/sergio/dotfiles"
+system_base = "/home/sergio"
+
+[config]
+repo_path = "nvim"
+system_path = ".config/nvim"
+sync_type = "dir"
+ignore_paths = ["lazy-lock.json"]
+delete_files_destination = true
+~~~
+
+With this config, `lazy-lock.json` is never copied from the repo and, if it
+already exists under `.config/nvim`, it is preserved rather than deleted.
+
 ### `directories.yaml`
 
 Run `punto --download directories.yaml` or `punto --upload directories.yaml`
